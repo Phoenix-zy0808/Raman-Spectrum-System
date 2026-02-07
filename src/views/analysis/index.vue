@@ -1,150 +1,175 @@
 <template>
-  <div class="spectral-analysis-center">
-    <div class="left-panel">
-      <DvBorderBox13>
-        <div class="panel-content">
-          <div class="panel-title">
-            <span class="title-icon">📊</span>
-            <span>样本管理</span>
+  <div class="page-container">
+    <div class="header-section">
+      <div class="header-bg">
+        <div class="header-title">
+          <span class="title-text">拉曼光谱智能检测系统</span>
+          <dv-decoration-6 class="dv-dec-6" :reverse="true" :color="['#50e3c2', '#67a1e5']" />
+        </div>
+
+        <div class="nav-btn-group">
+          <div class="nav-btn" @click="gotoPage('/dashboard')">
+            <span class="react-before"></span>
+            <span class="text">综合监控大屏</span>
+            <span class="react-after"></span>
           </div>
-          <div class="tree-container">
-            <ElTree
-              :data="sampleTreeData"
-              :props="{ children: 'children', label: 'label' }"
-              node-key="id"
-              default-expand-all
-              @node-click="handleNodeClick"
-              class="sample-tree"
-            >
-              <template #default="{ node, data }">
-                <span class="tree-node">
-                  <span :class="['node-icon', data.type]">●</span>
-                  <span class="node-label">{{ node.label }}</span>
-                </span>
-              </template>
-            </ElTree>
+
+          <div class="nav-btn active" @click="gotoPage('/analysis')">
+            <span class="react-before"></span>
+            <span class="text">光谱解析中心</span>
+            <span class="react-after"></span>
           </div>
         </div>
-      </DvBorderBox13>
+      </div>
     </div>
 
-    <div class="center-panel">
-      <div class="control-bar">
+    <div class="spectral-analysis-center">
+      <div class="left-panel">
+        <DvBorderBox13>
+          <div class="panel-content">
+            <div class="panel-title">
+              <span class="title-icon">📊</span>
+              <span>样本管理</span>
+            </div>
+            <div class="tree-container">
+              <ElTree
+                :data="sampleTreeData"
+                :props="{ children: 'children', label: 'label' }"
+                node-key="id"
+                default-expand-all
+                @node-click="handleNodeClick"
+                class="sample-tree"
+              >
+                <template #default="{ node, data }">
+                  <span class="tree-node">
+                    <span :class="['node-icon', data.type]">●</span>
+                    <span class="node-label">{{ node.label }}</span>
+                  </span>
+                </template>
+              </ElTree>
+            </div>
+          </div>
+        </DvBorderBox13>
+      </div>
+
+      <div class="center-panel">
+        <div class="control-bar">
+          <DvBorderBox12>
+            <div class="control-content">
+              <div class="control-group">
+                <div class="control-item">
+                  <span class="control-label">背景扣除</span>
+                  <ElSwitch
+                    v-model="algorithmConfig.backgroundSubtraction"
+                    class="glow-switch"
+                    @change="handleAlgorithmChange"
+                  />
+                </div>
+                <div class="control-item">
+                  <span class="control-label">基线校正</span>
+                  <ElSwitch
+                    v-model="algorithmConfig.baselineCorrection"
+                    class="glow-switch"
+                    @change="handleAlgorithmChange"
+                  />
+                </div>
+                <div class="control-item">
+                  <span class="control-label">平滑处理</span>
+                  <ElSwitch
+                    v-model="algorithmConfig.smoothing"
+                    class="glow-switch"
+                    @change="handleAlgorithmChange"
+                  />
+                </div>
+                <div class="control-item">
+                  <span class="control-label">峰值检测</span>
+                  <ElSwitch
+                    v-model="algorithmConfig.peakDetection"
+                    class="glow-switch"
+                    @change="handleAlgorithmChange"
+                  />
+                </div>
+              </div>
+              <div class="view-toggle">
+                <ElButton
+                  :type="viewMode === 'original' ? 'primary' : ''"
+                  @click="viewMode = 'original'"
+                  class="toggle-btn"
+                >
+                  原始图
+                </ElButton>
+                <ElButton
+                  :type="viewMode === 'processed' ? 'primary' : ''"
+                  @click="viewMode = 'processed'"
+                  class="toggle-btn"
+                >
+                  预处理图
+                </ElButton>
+              </div>
+            </div>
+          </DvBorderBox12>
+        </div>
+
+        <div class="chart-area">
+          <DvBorderBox13>
+            <div class="chart-container">
+              <div class="chart-title">拉曼光谱解析图</div>
+              <div ref="chartRef" class="chart"></div>
+            </div>
+          </DvBorderBox13>
+        </div>
+      </div>
+
+      <div class="right-panel">
         <DvBorderBox12>
-          <div class="control-content">
-            <div class="control-group">
-              <div class="control-item">
-                <span class="control-label">背景扣除</span>
-                <ElSwitch
-                  v-model="algorithmConfig.backgroundSubtraction"
-                  class="glow-switch"
-                  @change="handleAlgorithmChange"
-                />
-              </div>
-              <div class="control-item">
-                <span class="control-label">基线校正</span>
-                <ElSwitch
-                  v-model="algorithmConfig.baselineCorrection"
-                  class="glow-switch"
-                  @change="handleAlgorithmChange"
-                />
-              </div>
-              <div class="control-item">
-                <span class="control-label">平滑处理</span>
-                <ElSwitch
-                  v-model="algorithmConfig.smoothing"
-                  class="glow-switch"
-                  @change="handleAlgorithmChange"
-                />
-              </div>
-              <div class="control-item">
-                <span class="control-label">峰值检测</span>
-                <ElSwitch
-                  v-model="algorithmConfig.peakDetection"
-                  class="glow-switch"
-                  @change="handleAlgorithmChange"
+          <div class="panel-content">
+            <div class="panel-title">
+              <span class="title-icon">🤖</span>
+              <span>AI 智能识别</span>
+            </div>
+
+            <div class="result-section">
+              <div class="result-title">识别物质</div>
+              <div class="substance-name">{{ recognitionResult.substance }}</div>
+
+              <div class="match-score">
+                <div class="score-label">匹配度</div>
+                <div class="score-value">{{ recognitionResult.matchScore }}%</div>
+                <ElProgress
+                  :percentage="recognitionResult.matchScore"
+                  :color="getProgressColor(recognitionResult.matchScore)"
+                  :stroke-width="12"
+                  class="glow-progress"
                 />
               </div>
             </div>
-            <div class="view-toggle">
-              <ElButton
-                :type="viewMode === 'original' ? 'primary' : ''"
-                @click="viewMode = 'original'"
-                class="toggle-btn"
-              >
-                原始图
-              </ElButton>
-              <ElButton
-                :type="viewMode === 'processed' ? 'primary' : ''"
-                @click="viewMode = 'processed'"
-                class="toggle-btn"
-              >
-                预处理图
-              </ElButton>
+
+            <div class="params-section">
+              <div class="params-title">设备参数</div>
+              <div class="param-item">
+                <span class="param-label">激光强度</span>
+                <span class="param-value">{{ deviceParams.laserPower }} mW</span>
+              </div>
+              <div class="param-item">
+                <span class="param-label">扫描时间</span>
+                <span class="param-value">{{ deviceParams.scanTime }} s</span>
+              </div>
+              <div class="param-item">
+                <span class="param-label">设备温度</span>
+                <span class="param-value">{{ deviceParams.temperature }} °C</span>
+              </div>
+              <div class="param-item">
+                <span class="param-label">波长范围</span>
+                <span class="param-value">{{ deviceParams.wavelength }} nm</span>
+              </div>
+            </div>
+
+            <div class="gauge-container">
+              <div ref="gaugeRef" class="gauge"></div>
             </div>
           </div>
         </DvBorderBox12>
       </div>
-
-      <div class="chart-area">
-        <DvBorderBox13>
-          <div class="chart-container">
-            <div class="chart-title">拉曼光谱解析图</div>
-            <div ref="chartRef" class="chart"></div>
-          </div>
-        </DvBorderBox13>
-      </div>
-    </div>
-
-    <div class="right-panel">
-      <DvBorderBox12>
-        <div class="panel-content">
-          <div class="panel-title">
-            <span class="title-icon">🤖</span>
-            <span>AI 智能识别</span>
-          </div>
-
-          <div class="result-section">
-            <div class="result-title">识别物质</div>
-            <div class="substance-name">{{ recognitionResult.substance }}</div>
-
-            <div class="match-score">
-              <div class="score-label">匹配度</div>
-              <div class="score-value">{{ recognitionResult.matchScore }}%</div>
-              <ElProgress
-                :percentage="recognitionResult.matchScore"
-                :color="getProgressColor(recognitionResult.matchScore)"
-                :stroke-width="12"
-                class="glow-progress"
-              />
-            </div>
-          </div>
-
-          <div class="params-section">
-            <div class="params-title">设备参数</div>
-            <div class="param-item">
-              <span class="param-label">激光强度</span>
-              <span class="param-value">{{ deviceParams.laserPower }} mW</span>
-            </div>
-            <div class="param-item">
-              <span class="param-label">扫描时间</span>
-              <span class="param-value">{{ deviceParams.scanTime }} s</span>
-            </div>
-            <div class="param-item">
-              <span class="param-label">设备温度</span>
-              <span class="param-value">{{ deviceParams.temperature }} °C</span>
-            </div>
-            <div class="param-item">
-              <span class="param-label">波长范围</span>
-              <span class="param-value">{{ deviceParams.wavelength }} nm</span>
-            </div>
-          </div>
-
-          <div class="gauge-container">
-            <div ref="gaugeRef" class="gauge"></div>
-          </div>
-        </div>
-      </DvBorderBox12>
     </div>
   </div>
 </template>
@@ -153,7 +178,14 @@
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import type { ECharts } from 'echarts'
+import { useRouter } from 'vue-router' // 1. 引入路由
 
+const router = useRouter() // 2. 获取路由实例
+
+// 3. 定义跳转函数
+const gotoPage = (path: string) => {
+  router.push(path)
+}
 // 样本树数据
 const sampleTreeData = ref([
   {
@@ -483,18 +515,110 @@ onUnmounted(() => {
   gaugeInstance?.dispose()
 })
 </script>
-
 <style lang="scss" scoped>
-.spectral-analysis-center {
+// 页面总容器
+.page-container {
   width: 100%;
   height: 100vh;
   background: #001529;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+// 顶部导航栏样式
+.header-section {
+  height: 80px;
+  flex-shrink: 0;
+  position: relative;
+  background: rgba(0, 21, 41, 0.8);
+  border-bottom: 1px solid rgba(80, 227, 194, 0.3);
+
+  .header-bg {
+    height: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 40px;
+    background-image: url('~@/assets/pageBg.png'); // 如果有背景图的话
+    background-size: cover;
+  }
+
+  .header-title {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+
+    .title-text {
+      font-size: 32px;
+      font-weight: bold;
+      color: #b3efff;
+      text-shadow: 0 0 10px rgba(0, 246, 255, 0.5);
+      letter-spacing: 4px;
+      margin-bottom: 5px;
+    }
+
+    .dv-dec-6 {
+      width: 250px;
+      height: 8px;
+    }
+  }
+
+  .nav-btn-group {
+    display: flex;
+    gap: 40px;
+    width: 100%;
+    justify-content: space-between;
+
+    // 左右两侧的按钮样式
+    .nav-btn {
+      width: 200px;
+      height: 40px;
+      line-height: 40px;
+      text-align: center;
+      background: rgba(0, 50, 150, 0.3);
+      border: 1px solid #0055ff;
+      transform: skewX(-20deg); // 倾斜科技感
+      cursor: pointer;
+      color: #00baff;
+      font-weight: bold;
+      transition: all 0.3s;
+      position: relative;
+
+      .text {
+        display: inline-block;
+        transform: skewX(20deg); // 文字摆正
+      }
+
+      &:hover {
+        box-shadow: 0 0 15px #00e5ff inset;
+        color: #fff;
+      }
+
+      // 高亮状态
+      &.active {
+        background: rgba(0, 229, 255, 0.3);
+        border-color: #00e5ff;
+        color: #fff;
+        box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+      }
+    }
+  }
+}
+
+// 主体内容区域 (原 spectral-analysis-center)
+.spectral-analysis-center {
+  flex: 1; // 自动占满剩余高度
   display: flex;
   gap: 16px;
   padding: 16px;
   box-sizing: border-box;
   overflow: hidden;
 
+  // ... 后面完全保留你原来的样式 ...
   // 左侧面板
   .left-panel {
     width: 280px;
@@ -844,67 +968,6 @@ onUnmounted(() => {
       color: #00f6ff;
       font-weight: bold;
       text-shadow: 0 0 5px rgba(0, 246, 255, 0.5);
-    }
-  }
-}
-
-// 响应式适配
-@media screen and (max-width: 1600px) {
-  .spectral-analysis-center {
-    .left-panel {
-      width: 240px;
-    }
-
-    .right-panel {
-      width: 280px;
-    }
-  }
-}
-
-@media screen and (max-width: 1366px) {
-  .spectral-analysis-center {
-    gap: 12px;
-    padding: 12px;
-
-    .left-panel {
-      width: 220px;
-    }
-
-    .right-panel {
-      width: 260px;
-    }
-
-    .center-panel {
-      .control-bar {
-        height: 90px;
-
-        .control-content {
-          padding: 12px 20px;
-
-          .control-group {
-            gap: 20px;
-          }
-        }
-      }
-    }
-  }
-}
-
-// 大屏适配
-@media screen and (min-width: 1920px) {
-  .spectral-analysis-center {
-    .left-panel {
-      width: 320px;
-    }
-
-    .right-panel {
-      width: 360px;
-    }
-
-    .center-panel {
-      .control-bar {
-        height: 120px;
-      }
     }
   }
 }

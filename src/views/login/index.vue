@@ -175,26 +175,32 @@ const drawWaveformBackground = () => {
 }
 
 const handleLogin = async () => {
-  if (!username.value || !password.value) return
+  // 1. 检查是否为空
+  if (!username.value || !password.value) {
+    alert('请输入用户名和密码')
+    return
+  }
 
   isLoading.value = true
   try {
-    // 模拟登录请求延迟
+    // 模拟加载延迟（保留这个为了让效果更真实）
     await new Promise(resolve => setTimeout(resolve, 1500))
 
-    // 这里可以替换为真实的 API 调用
-    console.log('Login with:', { username: username.value, password: password.value })
+    // 2. 核心修改：验证账号密码
+    if (username.value === 'user' && password.value === '123456') {
+      console.log('登录成功')
+      // 跳转到首页 (确保你的路由里配置的是 /index)
+      await router.push('/dashboard')
+    } else {
+      // 密码错误的提示
+      alert('用户名或密码错误！')
+    }
 
-    // 跳转到首页
-    // 如果路由配置了 /index，使用以下方式：
-    await router.push('/index')
-
-    // 或者如果需要重定向到 /dashboard：
-    // await router.push('/dashboard')
   } catch (error) {
-    console.error('Login failed:', error)
-    alert('登录失败，请检查用户名和密码')
+    console.error('Login error:', error)
+    alert('系统异常，请重试')
   } finally {
+    // 无论成功失败，最后都要停止加载动画
     isLoading.value = false
   }
 }

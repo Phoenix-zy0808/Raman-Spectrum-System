@@ -3,6 +3,7 @@
     <div class="bg">
       <dv-loading v-if="loading">Loading...</dv-loading>
       <div v-else class="host-body">
+
         <div class="d-flex jc-center">
           <dv-decoration-10 class="dv-dec-10" />
           <div class="d-flex jc-center">
@@ -24,19 +25,29 @@
           <dv-decoration-10 class="dv-dec-10-s" />
         </div>
 
-        <!-- 第二行 -->
         <div class="d-flex jc-between px-2">
           <div class="d-flex aside-width">
-            <div class="react-left ml-4 react-l-s">
+
+            <div
+              class="react-left ml-4 react-l-s bg-color-blue"
+              @click="gotoPage('/index')"
+              style="cursor: pointer;"
+            >
               <span class="react-before"></span>
-              <span class="text">{{ subtitle[0] }}</span>
+              <span class="text">综合监控大屏</span>
             </div>
-            <div class="react-left ml-3">
-              <span class="text">{{ subtitle[1] }}</span>
+
+            <div
+              class="react-left ml-3"
+              @click="gotoPage('/analysis')"
+              style="cursor: pointer;"
+            >
+              <span class="text">光谱解析中心</span>
             </div>
+
           </div>
           <div class="d-flex aside-width">
-            <div class="react-right bg-color-blue mr-3">
+            <div class="react-right mr-3">
               <span class="text fw-b">{{ subtitle[2] }}</span>
             </div>
             <div class="react-right mr-4 react-l-s">
@@ -50,7 +61,6 @@
         </div>
 
         <div class="body-box">
-          <!-- 第三行数据 -->
           <div class="content-box">
             <div>
               <dv-border-box-12>
@@ -62,11 +72,9 @@
                 <center-left2 />
               </dv-border-box-12>
             </div>
-            <!-- 中间 -->
             <div>
               <center />
             </div>
-            <!-- 中间 -->
             <div>
               <center-right1 />
             </div>
@@ -77,7 +85,6 @@
             </div>
           </div>
 
-          <!-- 第四行数据 -->
           <div class="bototm-box">
             <dv-border-box-13>
               <bottom-left />
@@ -100,6 +107,7 @@ import {
   onMounted,
   onUnmounted,
 } from 'vue'
+import { useRouter } from 'vue-router' // 1. 引入路由
 import { formatTime } from '@/utils/index'
 import { WEEK } from '@/constant/index'
 import useDraw from '@/utils/useDraw'
@@ -123,6 +131,7 @@ export default defineComponent({
     BottomRight
   },
   setup() {
+    const router = useRouter() // 2. 获取路由实例
     // * 颜色
     const decorationColors = ['#568aea', '#000000']
     // * 加载标识
@@ -136,11 +145,11 @@ export default defineComponent({
     })
     // * 适配处理
     const { appRef, calcRate, windowDraw, unWindowDraw } = useDraw()
+
     // 生命周期
     onMounted(() => {
       cancelLoading()
       handleTime()
-      // todo 屏幕适应
       windowDraw()
       calcRate()
     })
@@ -151,14 +160,12 @@ export default defineComponent({
     })
 
     // methods
-    // todo 处理 loading 展示
     const cancelLoading = () => {
       setTimeout(() => {
         loading.value = false
       }, 500)
     }
 
-    // todo 处理时间监听
     const handleTime = () => {
       timeInfo.setInterval = setInterval(() => {
         const date = new Date()
@@ -168,14 +175,19 @@ export default defineComponent({
       }, 1000)
     }
 
-    // return
+    // 3. 页面跳转函数
+    const gotoPage = (path: string) => {
+      router.push(path)
+    }
+
     return {
       loading,
       timeInfo,
       appRef,
       title,
       subtitle,
-      moduleInfo
+      moduleInfo,
+      gotoPage // 导出给模版使用
     }
   }
 })

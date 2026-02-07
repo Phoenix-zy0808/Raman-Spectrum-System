@@ -3,7 +3,7 @@ import { createRouter, createWebHashHistory, RouteRecordRaw } from 'vue-router'
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
-    redirect: '/login' // 初始进入登录页
+    redirect: '/login' // 访问域名根目录，去登录页
   },
   {
     path: '/login',
@@ -11,14 +11,14 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('@/views/login/index.vue')
   },
   {
-    path: '/dashboard', // 原本的大屏首页
+    path: '/dashboard', // 【首页】综合监控大屏
     name: 'Dashboard',
     component: () => import('@/views/index/index.vue')
   },
   {
-    path: '/index', // 必须叫这个，登录跳转才能找得到
-    name: 'Index',
-    component: () => import('@/views/analysis/index.vue') // 对应刚才创建的文件
+    path: '/analysis', // 【内页】光谱解析中心 (把之前的 /index 改成 /analysis，语义更清晰)
+    name: 'Analysis',
+    component: () => import('@/views/analysis/index.vue')
   }
 ]
 
@@ -28,4 +28,3 @@ const router = createRouter({
 })
 
 export default router
-
