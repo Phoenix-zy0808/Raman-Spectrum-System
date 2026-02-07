@@ -1,5 +1,8 @@
 <template>
-  <div class="model-lab-container">
+  <div class="page-container">
+    <!-- 顶部导航栏 -->
+    <NavBar />
+
     <!-- 主体内容区 -->
     <div class="main-content">
       <!-- 左侧面板 - 模型配置中心 -->
@@ -258,12 +261,14 @@
 import { defineComponent, ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { BorderBox12 as DvBorderBox12, BorderBox13 as DvBorderBox13 } from '@kjgl77/datav-vue3'
 import echarts from 'echarts'
+import NavBar from '@/components/NavBar.vue'
 
 export default defineComponent({
   name: 'ModelLab',
   components: {
     DvBorderBox12,
-    DvBorderBox13
+    DvBorderBox13,
+    NavBar
   },
   setup() {
     // 配置数据
@@ -641,7 +646,6 @@ export default defineComponent({
     // 切换降维方法
     const changeDimMethod = (method: string) => {
       currentDimMethod.value = method
-      // 可以在这里重新生成数据或更新图表
     }
 
     // 开始训练
@@ -733,13 +737,15 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-.model-lab-container {
-  width: 100%;
-  min-height: 100vh;
+// ========== 页面容器 ==========
+.page-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background: linear-gradient(135deg, #001529 0%, #002140 50%, #001529 100%);
   position: relative;
-  overflow-x: hidden;
-  padding: 20px 0;
 
   // 添加科技感背景网格
   &::before {
@@ -756,27 +762,34 @@ export default defineComponent({
     pointer-events: none;
     z-index: 0;
   }
+}
 
-  .main-content {
-    display: flex;
-    gap: 20px;
-    padding: 0 20px;
-    position: relative;
-    z-index: 1;
-    min-height: calc(100vh - 40px);
-  }
+// ========== 主内容区 ==========
+.main-content {
+  flex: 1;
+  display: flex;
+  gap: 15px;
+  padding: 15px;
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  min-height: 0; // 关键:确保 Flex 子元素能正确计算高度
 }
 
 // ========== 左侧面板 ==========
 .left-panel {
   flex: 0 0 25%;
-  min-width: 350px;
+  min-width: 320px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 
   .panel-content {
     padding: 20px;
     height: 100%;
     display: flex;
     flex-direction: column;
+    min-height: 0;
   }
 
   .panel-title {
@@ -786,9 +799,10 @@ export default defineComponent({
     margin-bottom: 20px;
     padding-bottom: 15px;
     border-bottom: 2px solid rgba(0, 229, 255, 0.3);
+    flex-shrink: 0;
 
     .title-text {
-      font-size: 20px;
+      font-size: 18px;
       font-weight: bold;
       color: #00e5ff;
       text-shadow: 0 0 10px #00e5ff, 0 0 20px rgba(0, 229, 255, 0.5);
@@ -796,7 +810,7 @@ export default defineComponent({
     }
 
     .title-icon {
-      font-size: 24px;
+      font-size: 22px;
       filter: drop-shadow(0 0 5px #00e5ff);
     }
   }
@@ -805,6 +819,7 @@ export default defineComponent({
     flex: 1;
     overflow-y: auto;
     padding-right: 10px;
+    min-height: 0;
 
     &::-webkit-scrollbar {
       width: 6px;
@@ -823,12 +838,12 @@ export default defineComponent({
   }
 
   .config-item {
-    margin-bottom: 25px;
+    margin-bottom: 20px;
 
     .config-label {
       display: block;
       margin-bottom: 10px;
-      font-size: 14px;
+      font-size: 13px;
       color: #00e5ff;
       text-shadow: 0 0 5px rgba(0, 229, 255, 0.5);
       font-weight: 500;
@@ -837,9 +852,10 @@ export default defineComponent({
   }
 
   .train-button-wrapper {
-    margin-top: 20px;
-    padding-top: 20px;
+    margin-top: 15px;
+    padding-top: 15px;
     border-top: 2px solid rgba(0, 229, 255, 0.2);
+    flex-shrink: 0;
   }
 
   .train-button {
@@ -918,15 +934,22 @@ export default defineComponent({
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  min-width: 500px;
+  gap: 15px;
+  min-width: 0;
+  min-height: 0;
 
   .visualization-section {
-    flex: 0 0 60%;
+    flex: 1 1 60%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
   }
 
   .monitoring-section {
-    flex: 0 0 calc(40% - 20px);
+    flex: 1 1 40%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
   }
 
   .panel-content {
@@ -934,6 +957,7 @@ export default defineComponent({
     height: 100%;
     display: flex;
     flex-direction: column;
+    min-height: 0;
   }
 
   .panel-title {
@@ -943,6 +967,7 @@ export default defineComponent({
     margin-bottom: 15px;
     padding-bottom: 10px;
     border-bottom: 2px solid rgba(0, 229, 255, 0.3);
+    flex-shrink: 0;
 
     .title-text {
       font-size: 18px;
@@ -996,7 +1021,7 @@ export default defineComponent({
   .chart-container {
     flex: 1;
     width: 100%;
-    min-height: 300px;
+    min-height: 0;
   }
 }
 
@@ -1010,19 +1035,29 @@ export default defineComponent({
   flex: 0 0 25%;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  min-width: 320px;
+  gap: 15px;
+  min-width: 300px;
+  min-height: 0;
 
   .performance-section {
-    flex: 0 0 35%;
+    flex: 1 1 35%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
   }
 
   .log-section {
-    flex: 0 0 35%;
+    flex: 1 1 35%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
   }
 
   .resource-section {
-    flex: 0 0 calc(30% - 40px);
+    flex: 1 1 30%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
   }
 
   .panel-content {
@@ -1030,12 +1065,14 @@ export default defineComponent({
     height: 100%;
     display: flex;
     flex-direction: column;
+    min-height: 0;
   }
 
   .panel-title {
     margin-bottom: 15px;
     padding-bottom: 10px;
     border-bottom: 2px solid rgba(0, 229, 255, 0.3);
+    flex-shrink: 0;
 
     .title-text {
       font-size: 16px;
@@ -1049,13 +1086,14 @@ export default defineComponent({
   .chart-container-small {
     flex: 1;
     width: 100%;
-    min-height: 200px;
+    min-height: 0;
   }
 
   .log-container {
     flex: 1;
     overflow-y: auto;
     padding-right: 10px;
+    min-height: 0;
 
     &::-webkit-scrollbar {
       width: 6px;
@@ -1104,12 +1142,12 @@ export default defineComponent({
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 25px;
+    gap: 20px;
     justify-content: center;
 
     .resource-item {
       .resource-label {
-        font-size: 14px;
+        font-size: 13px;
         color: #00e5ff;
         margin-bottom: 10px;
         text-shadow: 0 0 5px rgba(0, 229, 255, 0.5);
@@ -1119,7 +1157,7 @@ export default defineComponent({
       .resource-value {
         text-align: right;
         margin-top: 8px;
-        font-size: 16px;
+        font-size: 15px;
         font-weight: bold;
         color: #00ff7f;
         text-shadow: 0 0 10px rgba(0, 255, 127, 0.5);
@@ -1131,7 +1169,7 @@ export default defineComponent({
 // ========== Element Plus 组件样式覆盖 ==========
 :deep(.el-tabs) {
   .el-tabs__header {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
   }
 
   .el-tabs__nav-wrap {
@@ -1305,6 +1343,7 @@ export default defineComponent({
     color: #00e5ff;
     font-weight: bold;
     text-shadow: 0 0 5px rgba(0, 229, 255, 0.5);
+    font-size: 13px;
   }
 }
 
@@ -1312,25 +1351,24 @@ export default defineComponent({
 @media screen and (max-width: 1600px) {
   .left-panel,
   .right-panel {
-    min-width: 300px;
-  }
-
-  .center-panel {
-    min-width: 450px;
+    min-width: 280px;
   }
 }
 
 @media screen and (max-width: 1200px) {
   .main-content {
     flex-direction: column;
+    overflow-y: auto;
   }
 
   .left-panel,
   .right-panel,
   .center-panel {
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     width: 100%;
     min-width: auto;
+    height: auto;
+    min-height: 500px;
   }
 
   .center-panel {

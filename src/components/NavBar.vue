@@ -36,7 +36,7 @@ const currentPath = computed(() => route.path)
 // 核心配置：8大功能目录
 const menuList = [
   { name: '综合监控', path: '/dashboard' },
-  { name: '数据管理', path: '/data-manage' },
+  { name: '数据管理', path: '/data-management' },
   { name: '光谱解析', path: '/analysis' },
   { name: '定量实验', path: '/quantitative' },
   { name: 'AI 模型', path: '/model-lab' },

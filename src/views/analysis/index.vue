@@ -168,7 +168,7 @@ const currentRoute = computed(() => route.path)
 // 2. 定义8个页面的目录配置
 const menuList = [
   { name: '综合监控', path: '/dashboard' },
-  { name: '数据管理', path: '/data-manage' }, // 还没做，暂时会跳到 analysis 或报错
+  { name: '数据管理', path: '/DataManagement' }, // 还没做，暂时会跳到 analysis 或报错
   { name: '光谱解析', path: '/analysis' },
   { name: '定量实验', path: '/quantitative' },
   { name: 'AI 模型', path: '/model-lab' },
