@@ -1,27 +1,6 @@
 <template>
   <div class="page-container">
-    <div class="header-section">
-      <div class="header-bg">
-        <div class="header-title">
-          <span class="title-text">拉曼光谱智能检测系统</span>
-          <dv-decoration-6 class="dv-dec-6" :reverse="true" :color="['#50e3c2', '#67a1e5']" />
-        </div>
-
-        <div class="nav-btn-group">
-          <div class="nav-btn" @click="gotoPage('/dashboard')">
-            <span class="react-before"></span>
-            <span class="text">综合监控大屏</span>
-            <span class="react-after"></span>
-          </div>
-
-          <div class="nav-btn active" @click="gotoPage('/analysis')">
-            <span class="react-before"></span>
-            <span class="text">光谱解析中心</span>
-            <span class="react-after"></span>
-          </div>
-        </div>
-      </div>
-    </div>
+    <NavBar />
 
     <div class="spectral-analysis-center">
       <div class="left-panel">
@@ -178,10 +157,25 @@
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import type { ECharts } from 'echarts'
-import { useRouter } from 'vue-router' // 1. 引入路由
+import { computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import NavBar from '@/components/NavBar.vue'
 
 const router = useRouter() // 2. 获取路由实例
-
+const route = useRoute()
+// 1. 获取当前路由路径（用于判断哪个按钮该高亮）
+const currentRoute = computed(() => route.path)
+// 2. 定义8个页面的目录配置
+const menuList = [
+  { name: '综合监控', path: '/dashboard' },
+  { name: '数据管理', path: '/data-manage' }, // 还没做，暂时会跳到 analysis 或报错
+  { name: '光谱解析', path: '/analysis' },
+  { name: '定量实验', path: '/quantitative' },
+  { name: 'AI 模型', path: '/model-lab' },
+  { name: '量子视图', path: '/quantum' },
+  { name: '报告生成', path: '/report' },
+  { name: '系统监控', path: '/system' }
+]
 // 3. 定义跳转函数
 const gotoPage = (path: string) => {
   router.push(path)
@@ -518,12 +512,19 @@ onUnmounted(() => {
 <style lang="scss" scoped>
 // 页面总容器
 .page-container {
-  width: 100%;
-  height: 100vh;
+  width: 100vw;  /* 强制宽度为视口宽度 */
+  height: 100vh; /* 强制高度为视口高度 */
   background: #001529;
   display: flex;
   flex-direction: column;
+
+  /* 核心修改：强制隐藏所有溢出的内容，杀掉滚动条 */
   overflow: hidden;
+
+  /* 确保没有默认边距干扰 */
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 // 顶部导航栏样式
@@ -569,36 +570,45 @@ onUnmounted(() => {
 
   .nav-btn-group {
     display: flex;
-    gap: 40px;
-    width: 100%;
-    justify-content: space-between;
+    gap: 10px;
+    flex: 1;
+    justify-content: flex-end;
 
-    // 左右两侧的按钮样式
+    /* 修改点：隐藏滚动条但保留功能，或者直接 hidden */
+    overflow: hidden;
+    /* 如果你想在屏幕很窄时也能显示完，建议加上这个自动换行，但通常大屏不需要 */
+    /* flex-wrap: wrap; */
+
     .nav-btn {
-      width: 200px;
-      height: 40px;
-      line-height: 40px;
+      /* 修改点：缩小一点最小宽度，防止挤出滚动条 */
+      min-width: 90px;
+      height: 36px;
+      line-height: 36px;
       text-align: center;
       background: rgba(0, 50, 150, 0.3);
       border: 1px solid #0055ff;
-      transform: skewX(-20deg); // 倾斜科技感
+      transform: skewX(-20deg);
       cursor: pointer;
       color: #00baff;
+      font-size: 14px;
       font-weight: bold;
       transition: all 0.3s;
       position: relative;
+      padding: 0 10px;
 
       .text {
         display: inline-block;
-        transform: skewX(20deg); // 文字摆正
+        transform: skewX(20deg);
+        /* 防止文字换行导致按钮变高 */
+        white-space: nowrap;
       }
 
+      /* ... 其他 hover, active 样式保持不变 ... */
       &:hover {
         box-shadow: 0 0 15px #00e5ff inset;
         color: #fff;
       }
 
-      // 高亮状态
       &.active {
         background: rgba(0, 229, 255, 0.3);
         border-color: #00e5ff;
