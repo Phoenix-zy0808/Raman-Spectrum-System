@@ -26,37 +26,41 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('@/views/model-lab/index.vue')
   },
 
-  // ★★★ 新增：数据管理中心 ★★★
+  // ★★★ 数据管理中心 ★★★
   {
     path: '/data-management',
     name: 'DataManagement',
-    // 指向你新建的数据管理页面
     component: () => import('@/views/DataManagement/index.vue')
   },
 
-  // ★★★ 新增：量子增强视图 ★★★
+  // ★★★ 量子增强视图 ★★★
   {
     path: '/quantum',
     name: 'Quantum',
-    // 指向你新建的量子视图页面
     component: () => import('@/views/quantum/index.vue')
   },
 
-  // --- 以下是还没做的页面（继续保持占位，暂时跳到解析页，防止报错） ---
+  // ★★★ 新增：定量分析实验室 ★★★
   {
     path: '/quantitative',
     name: 'Quantitative',
-    component: () => import('@/views/analysis/index.vue')
+    // 指向你新建的定量分析页面
+    component: () => import('@/views/quantitative/index.vue')
   },
+
+  // ★★★ 新增：智能报告生成器 ★★★
   {
     path: '/report',
     name: 'Report',
-    component: () => import('@/views/analysis/index.vue')
+    // 指向你新建的报告生成页面
+    component: () => import('@/views/report/index.vue')
   },
+
+  // --- 还没做的页面 (继续保持占位) ---
   {
     path: '/system',
     name: 'System',
-    component: () => import('@/views/analysis/index.vue')
+    component: () => import('@/views/system/index.vue')
   }
 ]
 
