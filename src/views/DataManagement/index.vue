@@ -1,22 +1,10 @@
 <template>
-  <div class="dm-container">
-    <!-- 顶部标题栏 - 大屏风格 -->
-    <div class="big-screen-header">
-      <div class="header-left">
-        <div class="corner-deco top-left"></div>
-        <span class="section-label">数据管理中心</span>
-      </div>
-      <h1 class="main-title">
-        <span class="title-glow">拉曼光谱</span>数据管理平台
-        <div class="title-underline"></div>
-      </h1>
-      <div class="header-right">
-        <span class="datetime">{{ currentTime }}</span>
-        <div class="corner-deco top-right"></div>
-      </div>
-    </div>
+  <div class="page-container">
+    <!-- 顶部导航栏 -->
+    <NavBar />
 
-    <div class="big-screen-content">
+    <!-- 主体内容区 -->
+    <div class="main-content">
 
       <!-- ================= 左侧：数据上传与导入 ================= -->
       <div class="data-panel left-panel">
@@ -474,7 +462,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive, ref, computed, onMounted, onUnmounted } from 'vue';
+import { defineComponent, reactive, ref, computed } from 'vue';
+import NavBar from '@/components/NavBar.vue';
 
 // ==================== 类型定义 ====================
 interface DataItem {
@@ -534,12 +523,14 @@ interface UploadTab {
 
 export default defineComponent({
   name: 'DataManagement',
+  components: {
+    NavBar
+  },
   setup() {
     // ==================== 响应式数据 ====================
     const uploadMode = ref<'local' | 'cloud' | 'device'>('local');
     const showMetadataModal = ref(false);
     const currentEditItem = ref<DataItem | null>(null);
-    const currentTime = ref('');
 
     // 筛选条件
     const searchKeyword = ref('');
@@ -755,19 +746,6 @@ export default defineComponent({
 
     // ==================== 方法 ====================
 
-    // 更新当前时间
-    const updateTime = () => {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      const weekday = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][now.getDay()];
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const seconds = String(now.getSeconds()).padStart(2, '0');
-      currentTime.value = `${year}-${month}-${day} ${weekday} ${hours}:${minutes}:${seconds}`;
-    };
-
     // SNR 样式类
     const getSnrClass = (snr: number): string => {
       if (snr >= 40) return 'high';
@@ -860,20 +838,6 @@ export default defineComponent({
       }
     };
 
-    // ==================== 生命周期 ====================
-    let timeInterval: number | null = null;
-
-    onMounted(() => {
-      updateTime();
-      timeInterval = window.setInterval(updateTime, 1000);
-    });
-
-    onUnmounted(() => {
-      if (timeInterval) {
-        clearInterval(timeInterval);
-      }
-    });
-
     return {
       // 数据
       uploadMode,
@@ -887,7 +851,6 @@ export default defineComponent({
       historyTasks,
       showMetadataModal,
       currentEditItem,
-      currentTime,
 
       // 筛选
       searchKeyword,
@@ -923,7 +886,7 @@ export default defineComponent({
   box-sizing: border-box;
 }
 
-.dm-container {
+.page-container {
   width: 100%;
   min-height: 100vh;
   background: #0a0e27;
@@ -934,137 +897,16 @@ export default defineComponent({
     repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0, 198, 251, 0.03) 2px, rgba(0, 198, 251, 0.03) 4px);
   color: #e0e6ed;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-  padding: 20px;
   overflow-x: hidden;
 }
 
-/* ==================== 顶部标题栏 ==================== */
-.big-screen-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 30px;
-  height: 80px;
-  margin-bottom: 20px;
-  position: relative;
-}
-
-.big-screen-header::before,
-.big-screen-header::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0, 198, 251, 0.5), transparent);
-}
-
-.big-screen-header::before { top: 0; }
-.big-screen-header::after { bottom: 0; }
-
-.header-left,
-.header-right {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  position: relative;
-}
-
-.header-right {
-  justify-content: flex-end;
-}
-
-.corner-deco {
-  width: 40px;
-  height: 40px;
-  position: relative;
-}
-
-.corner-deco::before,
-.corner-deco::after {
-  content: '';
-  position: absolute;
-  background: #00c6fb;
-}
-
-.corner-deco.top-left::before {
-  top: 0;
-  left: 0;
-  width: 2px;
-  height: 20px;
-}
-
-.corner-deco.top-left::after {
-  top: 0;
-  left: 0;
-  width: 20px;
-  height: 2px;
-}
-
-.corner-deco.top-right::before {
-  top: 0;
-  right: 0;
-  width: 2px;
-  height: 20px;
-}
-
-.corner-deco.top-right::after {
-  top: 0;
-  right: 0;
-  width: 20px;
-  height: 2px;
-}
-
-.section-label {
-  color: #00c6fb;
-  font-size: 14px;
-  letter-spacing: 2px;
-  margin-left: 15px;
-  text-transform: uppercase;
-}
-
-.main-title {
-  text-align: center;
-  font-size: 32px;
-  font-weight: 300;
-  letter-spacing: 4px;
-  color: #fff;
-  position: relative;
-  padding-bottom: 10px;
-}
-
-.title-glow {
-  background: linear-gradient(90deg, #00c6fb, #00ff9d);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  font-weight: 500;
-}
-
-.title-underline {
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 200px;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, #00c6fb, transparent);
-}
-
-.datetime {
-  color: #00ff9d;
-  font-size: 14px;
-  font-family: 'Courier New', monospace;
-  margin-right: 15px;
-  letter-spacing: 1px;
-}
-
 /* ==================== 主内容区 ==================== */
-.big-screen-content {
+.main-content {
   display: grid;
   grid-template-columns: 380px 1fr 380px;
   gap: 20px;
-  height: calc(100vh - 140px);
+  padding: 20px;
+  min-height: calc(100vh - 60px); /* 减去NavBar高度 */
 }
 
 /* ==================== 数据面板 ==================== */
@@ -2115,26 +1957,22 @@ export default defineComponent({
 
 /* ==================== 响应式 ==================== */
 @media (max-width: 1600px) {
-  .big-screen-content {
+  .main-content {
     grid-template-columns: 340px 1fr 340px;
   }
 }
 
 @media (max-width: 1400px) {
-  .big-screen-content {
+  .main-content {
     grid-template-columns: 300px 1fr 300px;
-  }
-
-  .main-title {
-    font-size: 28px;
   }
 }
 
 @media (max-width: 1200px) {
-  .big-screen-content {
+  .main-content {
     grid-template-columns: 1fr;
     grid-template-rows: auto auto auto;
-    height: auto;
+    min-height: auto;
   }
 
   .data-panel {
