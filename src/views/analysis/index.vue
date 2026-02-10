@@ -3,6 +3,7 @@
     <NavBar />
 
     <div class="spectral-analysis-center">
+      <!-- 左侧面板 - 样本管理 -->
       <div class="left-panel">
         <DvBorderBox13>
           <div class="panel-content">
@@ -27,11 +28,46 @@
                 </template>
               </ElTree>
             </div>
+
+            <!-- 模态切换区域 -->
+            <div class="modal-switch-section">
+              <div class="section-title">模态切换</div>
+              <div class="switch-group">
+                <div class="switch-item">
+                  <span class="switch-label">激发波长</span>
+                  <ElSelect v-model="modalSettings.wavelength" class="glow-select" @change="handleModalChange">
+                    <ElOption label="532 nm" :value="532" />
+                    <ElOption label="633 nm" :value="633" />
+                    <ElOption label="785 nm" :value="785" />
+                    <ElOption label="1064 nm" :value="1064" />
+                  </ElSelect>
+                </div>
+                <div class="switch-item">
+                  <span class="switch-label">偏振模式</span>
+                  <ElSelect v-model="modalSettings.polarization" class="glow-select" @change="handleModalChange">
+                    <ElOption label="垂直偏振" value="vertical" />
+                    <ElOption label="水平偏振" value="horizontal" />
+                    <ElOption label="圆偏振" value="circular" />
+                    <ElOption label="非偏振" value="none" />
+                  </ElSelect>
+                </div>
+                <div class="switch-item">
+                  <span class="switch-label">测量模式</span>
+                  <ElSelect v-model="modalSettings.scanMode" class="glow-select" @change="handleModalChange">
+                    <ElOption label="点扫描" value="point" />
+                    <ElOption label="线扫描" value="line" />
+                    <ElOption label="面扫描" value="area" />
+                  </ElSelect>
+                </div>
+              </div>
+            </div>
           </div>
         </DvBorderBox13>
       </div>
 
+      <!-- 中央面板 -->
       <div class="center-panel">
+        <!-- 控制栏 -->
         <div class="control-bar">
           <DvBorderBox12>
             <div class="control-content">
@@ -84,24 +120,83 @@
                 >
                   预处理图
                 </ElButton>
+                <ElButton
+                  :type="viewMode === 'comparison' ? 'primary' : ''"
+                  @click="viewMode = 'comparison'"
+                  class="toggle-btn"
+                >
+                  模态对比
+                </ElButton>
               </div>
             </div>
           </DvBorderBox12>
         </div>
 
+        <!-- 主图表区域 -->
         <div class="chart-area">
           <DvBorderBox13>
             <div class="chart-container">
-              <div class="chart-title">拉曼光谱解析图</div>
-              <div ref="chartRef" class="chart"></div>
+              <div class="chart-title">
+                {{ getChartTitle() }}
+              </div>
+
+              <!-- 模态对比视图 -->
+              <div v-if="viewMode === 'comparison'" class="comparison-view">
+                <div ref="comparisonChart1" class="comparison-chart"></div>
+                <div ref="comparisonChart2" class="comparison-chart"></div>
+              </div>
+
+              <!-- 单一光谱视图 -->
+              <div v-else ref="chartRef" class="chart"></div>
             </div>
           </DvBorderBox13>
         </div>
+
+        <!-- 时间序列控制 -->
+        <div class="timeline-control">
+          <DvBorderBox12>
+            <div class="timeline-content">
+              <div class="timeline-header">
+                <span class="timeline-title">时间序列动态监控</span>
+                <div class="timeline-buttons">
+                  <ElButton
+                    :type="isPlaying ? '' : 'primary'"
+                    @click="togglePlayback"
+                    class="timeline-btn"
+                    size="small"
+                  >
+                    {{ isPlaying ? '⏸ 暂停' : '▶ 播放' }}
+                  </ElButton>
+                  <ElButton
+                    @click="resetTimeline"
+                    class="timeline-btn"
+                    size="small"
+                  >
+                    ⟲ 重置
+                  </ElButton>
+                  <span class="time-display">时间: {{ currentTime.toFixed(1) }}s / {{ totalTime }}s</span>
+                </div>
+              </div>
+              <div class="timeline-slider">
+                <ElSlider
+                  v-model="currentTime"
+                  :max="totalTime"
+                  :step="0.1"
+                  :show-tooltip="true"
+                  @change="handleTimeChange"
+                  class="glow-slider"
+                />
+              </div>
+            </div>
+          </DvBorderBox12>
+        </div>
       </div>
 
+      <!-- 右侧面板 -->
       <div class="right-panel">
         <DvBorderBox12>
           <div class="panel-content">
+            <!-- AI 识别结果 -->
             <div class="panel-title">
               <span class="title-icon">🤖</span>
               <span>AI 智能识别</span>
@@ -123,6 +218,25 @@
               </div>
             </div>
 
+            <!-- 空间-光谱协同视图 -->
+            <div class="spatial-spectral-section">
+              <div class="section-title">空间-光谱协同</div>
+              <div class="imaging-container">
+                <!-- 2D化学成像 -->
+                <div ref="imagingRef" class="chemical-imaging" @click="handleImagingClick"></div>
+
+                <!-- 多通道融合显示 -->
+                <div class="channel-fusion">
+                  <div class="channel-item" v-for="(channel, index) in channels" :key="index">
+                    <div class="channel-color" :style="{ background: channel.color }"></div>
+                    <span class="channel-name">{{ channel.name }}</span>
+                    <span class="channel-value">{{ channel.intensity }}%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 设备参数 -->
             <div class="params-section">
               <div class="params-title">设备参数</div>
               <div class="param-item">
@@ -139,10 +253,15 @@
               </div>
               <div class="param-item">
                 <span class="param-label">波长范围</span>
-                <span class="param-value">{{ deviceParams.wavelength }} nm</span>
+                <span class="param-value">{{ modalSettings.wavelength }} nm</span>
+              </div>
+              <div class="param-item">
+                <span class="param-label">偏振状态</span>
+                <span class="param-value">{{ getPolarizationLabel() }}</span>
               </div>
             </div>
 
+            <!-- 仪表盘 -->
             <div class="gauge-container">
               <div ref="gaugeRef" class="gauge"></div>
             </div>
@@ -154,32 +273,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import * as echarts from 'echarts'
 import type { ECharts } from 'echarts'
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import NavBar from '@/components/NavBar.vue'
 
-const router = useRouter() // 2. 获取路由实例
+const router = useRouter()
 const route = useRoute()
-// 1. 获取当前路由路径（用于判断哪个按钮该高亮）
-const currentRoute = computed(() => route.path)
-// 2. 定义8个页面的目录配置
-const menuList = [
-  { name: '综合监控', path: '/dashboard' },
-  { name: '数据管理', path: '/DataManagement' }, // 还没做，暂时会跳到 analysis 或报错
-  { name: '光谱解析', path: '/analysis' },
-  { name: '定量实验', path: '/quantitative' },
-  { name: 'AI 模型', path: '/model-lab' },
-  { name: '量子视图', path: '/quantum' },
-  { name: '报告生成', path: '/report' },
-  { name: '系统监控', path: '/system' }
-]
-// 3. 定义跳转函数
-const gotoPage = (path: string) => {
-  router.push(path)
-}
+
 // 样本树数据
 const sampleTreeData = ref([
   {
@@ -222,8 +325,21 @@ const algorithmConfig = ref({
   peakDetection: true
 })
 
+// 模态设置
+const modalSettings = ref({
+  wavelength: 785,
+  polarization: 'vertical',
+  scanMode: 'point'
+})
+
 // 视图模式
-const viewMode = ref<'original' | 'processed'>('processed')
+const viewMode = ref<'original' | 'processed' | 'comparison'>('processed')
+
+// 时间序列
+const currentTime = ref(0)
+const totalTime = ref(60)
+const isPlaying = ref(false)
+let timelineTimer: number | null = null
 
 // 识别结果
 const recognitionResult = ref({
@@ -235,28 +351,74 @@ const recognitionResult = ref({
 const deviceParams = ref({
   laserPower: 50,
   scanTime: 10,
-  temperature: 25.3,
-  wavelength: 785
+  temperature: 25.3
 })
+
+// 多通道数据
+const channels = ref([
+  { name: 'C-H伸缩', color: '#ff6b00', intensity: 85 },
+  { name: 'C=C伸缩', color: '#00f6ff', intensity: 72 },
+  { name: 'C-C伸缩', color: '#00ff88', intensity: 68 },
+  { name: '芳香环', color: '#ff00ff', intensity: 45 }
+])
 
 // 图表引用
 const chartRef = ref<HTMLElement>()
+const comparisonChart1 = ref<HTMLElement>()
+const comparisonChart2 = ref<HTMLElement>()
 const gaugeRef = ref<HTMLElement>()
+const imagingRef = ref<HTMLElement>()
+
 let chartInstance: ECharts | null = null
+let comparison1Instance: ECharts | null = null
+let comparison2Instance: ECharts | null = null
 let gaugeInstance: ECharts | null = null
+let imagingInstance: ECharts | null = null
+
+// 选中的空间位置
+const selectedPosition = ref({ x: 0, y: 0 })
 
 // 生成拉曼光谱数据
-const generateSpectrumData = () => {
+const generateSpectrumData = (timeOffset = 0, wavelength = 785) => {
   const data: [number, number][] = []
+  const wavelengthFactor = wavelength / 785
+
   for (let i = 400; i <= 3200; i += 10) {
-    let intensity = Math.random() * 100
-    // 添加特征峰
-    if (i >= 1000 && i <= 1100) intensity += 300 * Math.exp(-Math.pow((i - 1050) / 20, 2))
-    if (i >= 1400 && i <= 1500) intensity += 400 * Math.exp(-Math.pow((i - 1450) / 25, 2))
-    if (i >= 2800 && i <= 2950) intensity += 500 * Math.exp(-Math.pow((i - 2900) / 30, 2))
-    data.push([i, intensity])
+    let intensity = Math.random() * 50 + timeOffset * 2
+
+    // 特征峰随波长变化
+    if (i >= 1000 && i <= 1100) {
+      intensity += (300 + timeOffset * 5) * Math.exp(-Math.pow((i - 1050 * wavelengthFactor) / 20, 2))
+    }
+    if (i >= 1400 && i <= 1500) {
+      intensity += (400 + timeOffset * 8) * Math.exp(-Math.pow((i - 1450 * wavelengthFactor) / 25, 2))
+    }
+    if (i >= 2800 && i <= 2950) {
+      intensity += (500 + timeOffset * 10) * Math.exp(-Math.pow((i - 2900 * wavelengthFactor) / 30, 2))
+    }
+
+    data.push([i, Math.max(0, intensity)])
   }
   return data
+}
+
+// 获取图表标题
+const getChartTitle = () => {
+  if (viewMode.value === 'comparison') {
+    return '多模态对比分析'
+  }
+  return viewMode.value === 'original' ? '原始拉曼光谱' : '预处理拉曼光谱'
+}
+
+// 获取偏振标签
+const getPolarizationLabel = () => {
+  const labels: Record<string, string> = {
+    vertical: '垂直偏振',
+    horizontal: '水平偏振',
+    circular: '圆偏振',
+    none: '非偏振'
+  }
+  return labels[modalSettings.value.polarization] || '未知'
 }
 
 // 初始化主图表
@@ -275,9 +437,9 @@ const initChart = () => {
     },
     tooltip: {
       trigger: 'axis',
-      backgroundColor: 'rgba(0, 21, 41, 0.9)',
+      backgroundColor: 'rgba(0, 21, 41, 0.95)',
       borderColor: '#00f6ff',
-      borderWidth: 1,
+      borderWidth: 2,
       textStyle: {
         color: '#00f6ff',
         fontSize: 14
@@ -285,12 +447,15 @@ const initChart = () => {
       formatter: (params: any) => {
         const point = params[0]
         return `
-          <div style="padding: 8px;">
-            <div style="color: #00ff88; font-weight: bold; margin-bottom: 5px;">
+          <div style="padding: 10px;">
+            <div style="color: #00ff88; font-weight: bold; margin-bottom: 8px; font-size: 16px;">
               波数: ${point.data[0]} cm⁻¹
             </div>
-            <div style="color: #00f6ff;">
+            <div style="color: #00f6ff; font-size: 14px;">
               强度: ${point.data[1].toFixed(2)}
+            </div>
+            <div style="color: rgba(0,246,255,0.7); font-size: 12px; margin-top: 5px;">
+              时间: ${currentTime.value.toFixed(1)}s
             </div>
           </div>
         `
@@ -301,18 +466,20 @@ const initChart = () => {
       name: '波数 (cm⁻¹)',
       nameTextStyle: {
         color: '#00f6ff',
-        fontSize: 14,
-        padding: [5, 0, 0, 0]
+        fontSize: 16,
+        fontWeight: 'bold',
+        padding: [8, 0, 0, 0]
       },
       axisLine: {
         lineStyle: { color: '#00f6ff', width: 2 }
       },
       axisLabel: {
         color: '#00f6ff',
-        fontSize: 12
+        fontSize: 13,
+        fontWeight: 'bold'
       },
       splitLine: {
-        lineStyle: { color: 'rgba(0, 246, 255, 0.1)' }
+        lineStyle: { color: 'rgba(0, 246, 255, 0.15)', width: 1 }
       }
     },
     yAxis: {
@@ -320,40 +487,42 @@ const initChart = () => {
       name: '强度',
       nameTextStyle: {
         color: '#00f6ff',
-        fontSize: 14
+        fontSize: 16,
+        fontWeight: 'bold'
       },
       axisLine: {
         lineStyle: { color: '#00f6ff', width: 2 }
       },
       axisLabel: {
         color: '#00f6ff',
-        fontSize: 12
+        fontSize: 13,
+        fontWeight: 'bold'
       },
       splitLine: {
-        lineStyle: { color: 'rgba(0, 246, 255, 0.1)' }
+        lineStyle: { color: 'rgba(0, 246, 255, 0.15)', width: 1 }
       }
     },
     series: [
       {
         type: 'line',
-        data: generateSpectrumData(),
+        data: generateSpectrumData(currentTime.value, modalSettings.value.wavelength),
         symbol: 'circle',
-        symbolSize: 4,
+        symbolSize: 6,
         showSymbol: false,
         smooth: true,
         lineStyle: {
-          width: 2,
+          width: 3,
           color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
             { offset: 0, color: '#00f6ff' },
             { offset: 0.5, color: '#00ff88' },
             { offset: 1, color: '#00f6ff' }
           ]),
           shadowColor: '#00f6ff',
-          shadowBlur: 10
+          shadowBlur: 15
         },
         areaStyle: {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(0, 246, 255, 0.3)' },
+            { offset: 0, color: 'rgba(0, 246, 255, 0.4)' },
             { offset: 1, color: 'rgba(0, 246, 255, 0.05)' }
           ])
         }
@@ -362,6 +531,236 @@ const initChart = () => {
   }
 
   chartInstance.setOption(option)
+}
+
+// 初始化对比图表
+const initComparisonCharts = () => {
+  if (!comparisonChart1.value || !comparisonChart2.value) return
+
+  // 第一个对比图 - 不同波长
+  comparison1Instance = echarts.init(comparisonChart1.value)
+  const option1 = {
+    backgroundColor: 'transparent',
+    title: {
+      text: `${modalSettings.value.wavelength}nm vs 532nm 波长对比`,
+      left: 'center',
+      top: '3%',
+      textStyle: {
+        color: '#00f6ff',
+        fontSize: 16,
+        fontWeight: 'bold'
+      }
+    },
+    grid: { left: '10%', right: '5%', top: '18%', bottom: '15%' },
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(0, 21, 41, 0.95)',
+      borderColor: '#00f6ff',
+      borderWidth: 2
+    },
+    legend: {
+      data: [`${modalSettings.value.wavelength}nm`, '532nm'],
+      top: '8%',
+      textStyle: { color: '#00f6ff', fontSize: 12 }
+    },
+    xAxis: {
+      type: 'value',
+      name: '波数 (cm⁻¹)',
+      nameTextStyle: { color: '#00f6ff', fontSize: 13 },
+      axisLine: { lineStyle: { color: '#00f6ff' } },
+      axisLabel: { color: '#00f6ff', fontSize: 11 },
+      splitLine: { lineStyle: { color: 'rgba(0, 246, 255, 0.1)' } }
+    },
+    yAxis: {
+      type: 'value',
+      name: '强度',
+      nameTextStyle: { color: '#00f6ff', fontSize: 13 },
+      axisLine: { lineStyle: { color: '#00f6ff' } },
+      axisLabel: { color: '#00f6ff', fontSize: 11 },
+      splitLine: { lineStyle: { color: 'rgba(0, 246, 255, 0.1)' } }
+    },
+    series: [
+      {
+        name: `${modalSettings.value.wavelength}nm`,
+        type: 'line',
+        data: generateSpectrumData(currentTime.value, modalSettings.value.wavelength),
+        smooth: true,
+        lineStyle: { width: 2, color: '#00f6ff' },
+        showSymbol: false
+      },
+      {
+        name: '532nm',
+        type: 'line',
+        data: generateSpectrumData(currentTime.value, 532),
+        smooth: true,
+        lineStyle: { width: 2, color: '#ff6b00' },
+        showSymbol: false
+      }
+    ]
+  }
+  comparison1Instance.setOption(option1)
+
+  // 第二个对比图 - 不同偏振
+  comparison2Instance = echarts.init(comparisonChart2.value)
+  const option2 = {
+    backgroundColor: 'transparent',
+    title: {
+      text: '偏振模式对比',
+      left: 'center',
+      top: '3%',
+      textStyle: {
+        color: '#00f6ff',
+        fontSize: 16,
+        fontWeight: 'bold'
+      }
+    },
+    grid: { left: '10%', right: '5%', top: '18%', bottom: '15%' },
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(0, 21, 41, 0.95)',
+      borderColor: '#00f6ff',
+      borderWidth: 2
+    },
+    legend: {
+      data: ['垂直偏振', '水平偏振', '圆偏振'],
+      top: '8%',
+      textStyle: { color: '#00f6ff', fontSize: 12 }
+    },
+    xAxis: {
+      type: 'value',
+      name: '波数 (cm⁻¹)',
+      nameTextStyle: { color: '#00f6ff', fontSize: 13 },
+      axisLine: { lineStyle: { color: '#00f6ff' } },
+      axisLabel: { color: '#00f6ff', fontSize: 11 },
+      splitLine: { lineStyle: { color: 'rgba(0, 246, 255, 0.1)' } }
+    },
+    yAxis: {
+      type: 'value',
+      name: '强度',
+      nameTextStyle: { color: '#00f6ff', fontSize: 13 },
+      axisLine: { lineStyle: { color: '#00f6ff' } },
+      axisLabel: { color: '#00f6ff', fontSize: 11 },
+      splitLine: { lineStyle: { color: 'rgba(0, 246, 255, 0.1)' } }
+    },
+    series: [
+      {
+        name: '垂直偏振',
+        type: 'line',
+        data: generateSpectrumData(currentTime.value).map(([x, y]) => [x, y * 1.0]),
+        smooth: true,
+        lineStyle: { width: 2, color: '#00f6ff' },
+        showSymbol: false
+      },
+      {
+        name: '水平偏振',
+        type: 'line',
+        data: generateSpectrumData(currentTime.value).map(([x, y]) => [x, y * 0.7]),
+        smooth: true,
+        lineStyle: { width: 2, color: '#00ff88' },
+        showSymbol: false
+      },
+      {
+        name: '圆偏振',
+        type: 'line',
+        data: generateSpectrumData(currentTime.value).map(([x, y]) => [x, y * 0.85]),
+        smooth: true,
+        lineStyle: { width: 2, color: '#ff00ff' },
+        showSymbol: false
+      }
+    ]
+  }
+  comparison2Instance.setOption(option2)
+}
+
+// 初始化化学成像
+const initChemicalImaging = () => {
+  if (!imagingRef.value) return
+
+  imagingInstance = echarts.init(imagingRef.value)
+
+  // 生成2D化学成像数据
+  const data: [number, number, number][] = []
+  for (let i = 0; i < 50; i++) {
+    for (let j = 0; j < 50; j++) {
+      const value = Math.sin(i / 5) * Math.cos(j / 5) * 50 + 50 + Math.random() * 20
+      data.push([i, j, value])
+    }
+  }
+
+  const option = {
+    backgroundColor: 'transparent',
+    tooltip: {
+      position: 'top',
+      backgroundColor: 'rgba(0, 21, 41, 0.95)',
+      borderColor: '#00f6ff',
+      borderWidth: 2,
+      textStyle: { color: '#00f6ff', fontSize: 12 },
+      formatter: (params: any) => {
+        return `
+          <div style="padding: 8px;">
+            <div style="color: #00ff88; font-weight: bold;">
+              位置: (${params.data[0]}, ${params.data[1]})
+            </div>
+            <div style="color: #00f6ff; margin-top: 5px;">
+              强度: ${params.data[2].toFixed(1)}
+            </div>
+          </div>
+        `
+      }
+    },
+    grid: {
+      left: '5%',
+      right: '15%',
+      top: '5%',
+      bottom: '5%'
+    },
+    xAxis: {
+      type: 'category',
+      data: Array.from({ length: 50 }, (_, i) => i),
+      splitArea: { show: true },
+      axisLine: { lineStyle: { color: '#00f6ff' } },
+      axisLabel: { show: false }
+    },
+    yAxis: {
+      type: 'category',
+      data: Array.from({ length: 50 }, (_, i) => i),
+      splitArea: { show: true },
+      axisLine: { lineStyle: { color: '#00f6ff' } },
+      axisLabel: { show: false }
+    },
+    visualMap: {
+      min: 0,
+      max: 100,
+      calculable: true,
+      orient: 'vertical',
+      right: '0%',
+      top: 'center',
+      textStyle: { color: '#00f6ff', fontSize: 10 },
+      inRange: {
+        color: ['#001529', '#00f6ff', '#00ff88', '#ff6b00', '#ff0000']
+      }
+    },
+    series: [
+      {
+        type: 'heatmap',
+        data: data,
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 10,
+            shadowColor: '#00f6ff'
+          }
+        }
+      }
+    ]
+  }
+
+  imagingInstance.setOption(option)
+
+  // 添加点击事件
+  imagingInstance.on('click', (params: any) => {
+    selectedPosition.value = { x: params.data[0], y: params.data[1] }
+    handleImagingClick()
+  })
 }
 
 // 初始化仪表盘
@@ -375,7 +774,7 @@ const initGauge = () => {
     series: [
       {
         type: 'gauge',
-        radius: '80%',
+        radius: '85%',
         startAngle: 200,
         endAngle: -20,
         min: 0,
@@ -390,19 +789,19 @@ const initGauge = () => {
         },
         progress: {
           show: true,
-          width: 12
+          width: 14
         },
         pointer: {
           show: false
         },
         axisLine: {
           lineStyle: {
-            width: 12,
+            width: 14,
             color: [[1, 'rgba(0, 246, 255, 0.2)']]
           }
         },
         axisTick: {
-          distance: -16,
+          distance: -18,
           splitNumber: 5,
           lineStyle: {
             width: 2,
@@ -410,17 +809,18 @@ const initGauge = () => {
           }
         },
         splitLine: {
-          distance: -20,
-          length: 10,
+          distance: -22,
+          length: 12,
           lineStyle: {
             width: 3,
             color: '#00f6ff'
           }
         },
         axisLabel: {
-          distance: -32,
+          distance: -35,
           color: '#00f6ff',
-          fontSize: 10
+          fontSize: 11,
+          fontWeight: 'bold'
         },
         anchor: {
           show: false
@@ -433,8 +833,8 @@ const initGauge = () => {
           width: '60%',
           lineHeight: 40,
           borderRadius: 8,
-          offsetCenter: [0, '0%'],
-          fontSize: 28,
+          offsetCenter: [0, '5%'],
+          fontSize: 32,
           fontWeight: 'bolder',
           formatter: '{value}%',
           color: '#00ff88'
@@ -457,27 +857,137 @@ const handleNodeClick = (data: any) => {
     recognitionResult.value.substance = data.label
     recognitionResult.value.matchScore = Math.floor(Math.random() * 15 + 85)
 
-    // 更新图表
-    if (chartInstance) {
-      chartInstance.setOption({
-        series: [{ data: generateSpectrumData() }]
-      })
-    }
+    updateAllCharts()
+    updateGauge()
+  }
+}
 
-    // 更新仪表盘
-    if (gaugeInstance) {
-      gaugeInstance.setOption({
-        series: [{ data: [{ value: recognitionResult.value.matchScore }] }]
-      })
-    }
+// 处理成像点击
+const handleImagingClick = () => {
+  // 更新光谱图以反映选中位置的光谱
+  if (chartInstance && viewMode.value !== 'comparison') {
+    const offset = (selectedPosition.value.x + selectedPosition.value.y) / 10
+    chartInstance.setOption({
+      series: [{
+        data: generateSpectrumData(currentTime.value + offset, modalSettings.value.wavelength)
+      }]
+    })
   }
 }
 
 // 处理算法变化
 const handleAlgorithmChange = () => {
+  updateAllCharts()
+}
+
+// 处理模态变化
+const handleModalChange = () => {
+  updateAllCharts()
+}
+
+// 处理时间变化
+const handleTimeChange = () => {
+  updateAllCharts()
+}
+
+// 播放/暂停时间序列
+const togglePlayback = () => {
+  isPlaying.value = !isPlaying.value
+
+  if (isPlaying.value) {
+    timelineTimer = window.setInterval(() => {
+      currentTime.value += 0.1
+      if (currentTime.value >= totalTime.value) {
+        currentTime.value = 0
+      }
+      handleTimeChange()
+    }, 100)
+  } else {
+    if (timelineTimer !== null) {
+      clearInterval(timelineTimer)
+      timelineTimer = null
+    }
+  }
+}
+
+// 重置时间线
+const resetTimeline = () => {
+  currentTime.value = 0
+  isPlaying.value = false
+  if (timelineTimer !== null) {
+    clearInterval(timelineTimer)
+    timelineTimer = null
+  }
+  handleTimeChange()
+}
+
+// 更新所有图表
+const updateAllCharts = () => {
+  if (viewMode.value === 'comparison') {
+    updateComparisonCharts()
+  } else {
+    updateMainChart()
+  }
+}
+
+// 更新主图表
+const updateMainChart = () => {
   if (chartInstance) {
     chartInstance.setOption({
-      series: [{ data: generateSpectrumData() }]
+      series: [{
+        data: generateSpectrumData(currentTime.value, modalSettings.value.wavelength)
+      }]
+    })
+  }
+}
+
+// 更新对比图表
+const updateComparisonCharts = () => {
+  if (comparison1Instance) {
+    comparison1Instance.setOption({
+      title: {
+        text: `${modalSettings.value.wavelength}nm vs 532nm 波长对比`
+      },
+      legend: {
+        data: [`${modalSettings.value.wavelength}nm`, '532nm']
+      },
+      series: [
+        {
+          name: `${modalSettings.value.wavelength}nm`,
+          data: generateSpectrumData(currentTime.value, modalSettings.value.wavelength)
+        },
+        {
+          name: '532nm',
+          data: generateSpectrumData(currentTime.value, 532)
+        }
+      ]
+    })
+  }
+
+  if (comparison2Instance) {
+    comparison2Instance.setOption({
+      series: [
+        {
+          data: generateSpectrumData(currentTime.value).map(([x, y]) => [x, y * 1.0])
+        },
+        {
+          data: generateSpectrumData(currentTime.value).map(([x, y]) => [x, y * 0.7])
+        },
+        {
+          data: generateSpectrumData(currentTime.value).map(([x, y]) => [x, y * 0.85])
+        }
+      ]
+    })
+  }
+}
+
+// 更新仪表盘
+const updateGauge = () => {
+  if (gaugeInstance) {
+    gaugeInstance.setOption({
+      series: [{
+        data: [{ value: recognitionResult.value.matchScore }]
+      }]
     })
   }
 }
@@ -489,150 +999,75 @@ const getProgressColor = (percentage: number) => {
   return '#ff6b00'
 }
 
+// 监听视图模式变化
+watch(viewMode, (newMode) => {
+  nextTick(() => {
+    if (newMode === 'comparison') {
+      initComparisonCharts()
+    } else {
+      initChart()
+    }
+  })
+})
+
 // 响应式处理
 const handleResize = () => {
   chartInstance?.resize()
+  comparison1Instance?.resize()
+  comparison2Instance?.resize()
   gaugeInstance?.resize()
+  imagingInstance?.resize()
 }
 
 onMounted(() => {
   nextTick(() => {
     initChart()
     initGauge()
+    initChemicalImaging()
     window.addEventListener('resize', handleResize)
   })
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
+  if (timelineTimer !== null) {
+    clearInterval(timelineTimer)
+  }
   chartInstance?.dispose()
+  comparison1Instance?.dispose()
+  comparison2Instance?.dispose()
   gaugeInstance?.dispose()
+  imagingInstance?.dispose()
 })
 </script>
+
 <style lang="scss" scoped>
-// 页面总容器
 .page-container {
-  width: 100vw;  /* 强制宽度为视口宽度 */
-  height: 100vh; /* 强制高度为视口高度 */
+  width: 100vw;
+  height: 100vh;
   background: #001529;
   display: flex;
   flex-direction: column;
-
-  /* 核心修改：强制隐藏所有溢出的内容，杀掉滚动条 */
   overflow: hidden;
-
-  /* 确保没有默认边距干扰 */
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-// 顶部导航栏样式
-.header-section {
-  height: 80px;
-  flex-shrink: 0;
-  position: relative;
-  background: rgba(0, 21, 41, 0.8);
-  border-bottom: 1px solid rgba(80, 227, 194, 0.3);
-
-  .header-bg {
-    height: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 40px;
-    background-image: url('~@/assets/pageBg.png'); // 如果有背景图的话
-    background-size: cover;
-  }
-
-  .header-title {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-
-    .title-text {
-      font-size: 32px;
-      font-weight: bold;
-      color: #b3efff;
-      text-shadow: 0 0 10px rgba(0, 246, 255, 0.5);
-      letter-spacing: 4px;
-      margin-bottom: 5px;
-    }
-
-    .dv-dec-6 {
-      width: 250px;
-      height: 8px;
-    }
-  }
-
-  .nav-btn-group {
-    display: flex;
-    gap: 10px;
-    flex: 1;
-    justify-content: flex-end;
-
-    /* 修改点：隐藏滚动条但保留功能，或者直接 hidden */
-    overflow: hidden;
-    /* 如果你想在屏幕很窄时也能显示完，建议加上这个自动换行，但通常大屏不需要 */
-    /* flex-wrap: wrap; */
-
-    .nav-btn {
-      /* 修改点：缩小一点最小宽度，防止挤出滚动条 */
-      min-width: 90px;
-      height: 36px;
-      line-height: 36px;
-      text-align: center;
-      background: rgba(0, 50, 150, 0.3);
-      border: 1px solid #0055ff;
-      transform: skewX(-20deg);
-      cursor: pointer;
-      color: #00baff;
-      font-size: 14px;
-      font-weight: bold;
-      transition: all 0.3s;
-      position: relative;
-      padding: 0 10px;
-
-      .text {
-        display: inline-block;
-        transform: skewX(20deg);
-        /* 防止文字换行导致按钮变高 */
-        white-space: nowrap;
-      }
-
-      /* ... 其他 hover, active 样式保持不变 ... */
-      &:hover {
-        box-shadow: 0 0 15px #00e5ff inset;
-        color: #fff;
-      }
-
-      &.active {
-        background: rgba(0, 229, 255, 0.3);
-        border-color: #00e5ff;
-        color: #fff;
-        box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
-      }
-    }
-  }
-}
-
-// 主体内容区域 (原 spectral-analysis-center)
 .spectral-analysis-center {
-  flex: 1; // 自动占满剩余高度
+  flex: 1;
   display: flex;
   gap: 16px;
   padding: 16px;
   box-sizing: border-box;
   overflow: hidden;
 
-  // ... 后面完全保留你原来的样式 ...
   // 左侧面板
   .left-panel {
     width: 280px;
     flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
 
     .panel-content {
       height: 100%;
@@ -659,6 +1094,7 @@ onUnmounted(() => {
       .tree-container {
         flex: 1;
         overflow-y: auto;
+        margin-bottom: 20px;
 
         &::-webkit-scrollbar {
           width: 6px;
@@ -675,6 +1111,41 @@ onUnmounted(() => {
 
         &::-webkit-scrollbar-track {
           background: rgba(0, 21, 41, 0.5);
+        }
+      }
+
+      .modal-switch-section {
+        background: rgba(0, 21, 41, 0.6);
+        border: 1px solid rgba(0, 246, 255, 0.3);
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow: inset 0 0 20px rgba(0, 246, 255, 0.1);
+
+        .section-title {
+          font-size: 14px;
+          font-weight: bold;
+          color: #00f6ff;
+          margin-bottom: 15px;
+          text-shadow: 0 0 5px rgba(0, 246, 255, 0.5);
+        }
+
+        .switch-group {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+
+          .switch-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+
+            .switch-label {
+              font-size: 12px;
+              color: rgba(0, 246, 255, 0.8);
+              text-transform: uppercase;
+              letter-spacing: 1px;
+            }
+          }
         }
       }
     }
@@ -724,6 +1195,26 @@ onUnmounted(() => {
       .node-label {
         font-size: 14px;
       }
+    }
+  }
+
+  // 自定义选择器样式
+  :deep(.glow-select) {
+    width: 100%;
+
+    .el-input__wrapper {
+      background: rgba(0, 21, 41, 0.8);
+      border: 1px solid #00f6ff;
+      box-shadow: 0 0 10px rgba(0, 246, 255, 0.3);
+
+      &:hover {
+        box-shadow: 0 0 15px rgba(0, 246, 255, 0.5);
+      }
+    }
+
+    .el-input__inner {
+      color: #00f6ff;
+      font-size: 13px;
     }
   }
 
@@ -818,6 +1309,88 @@ onUnmounted(() => {
           flex: 1;
           min-height: 0;
         }
+
+        .comparison-view {
+          flex: 1;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 20px;
+          min-height: 0;
+
+          .comparison-chart {
+            width: 100%;
+            height: 100%;
+            border: 1px solid rgba(0, 246, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(0, 21, 41, 0.3);
+          }
+        }
+      }
+    }
+
+    .timeline-control {
+      height: 120px;
+      flex-shrink: 0;
+
+      .timeline-content {
+        height: 100%;
+        padding: 15px 25px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+
+        .timeline-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+
+          .timeline-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #00f6ff;
+            text-shadow: 0 0 10px rgba(0, 246, 255, 0.5);
+          }
+
+          .timeline-buttons {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            .timeline-btn {
+              background: rgba(0, 21, 41, 0.8);
+              border: 1px solid #00f6ff;
+              color: #00f6ff;
+              font-size: 13px;
+              padding: 6px 15px;
+              transition: all 0.3s;
+
+              &:hover {
+                background: rgba(0, 246, 255, 0.2);
+                box-shadow: 0 0 15px rgba(0, 246, 255, 0.5);
+              }
+
+              &.el-button--primary {
+                background: linear-gradient(135deg, #00f6ff, #00ff88);
+                border-color: #00ff88;
+                color: #001529;
+                font-weight: bold;
+                box-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
+              }
+            }
+
+            .time-display {
+              color: #00ff88;
+              font-size: 14px;
+              font-weight: bold;
+              text-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
+              margin-left: 10px;
+            }
+          }
+        }
+
+        .timeline-slider {
+          flex: 1;
+        }
       }
     }
   }
@@ -842,6 +1415,26 @@ onUnmounted(() => {
     }
   }
 
+  // 发光滑块样式
+  :deep(.glow-slider) {
+    .el-slider__runway {
+      background: rgba(0, 246, 255, 0.2);
+      border: 1px solid rgba(0, 246, 255, 0.3);
+      height: 8px;
+    }
+
+    .el-slider__bar {
+      background: linear-gradient(90deg, #00f6ff, #00ff88);
+      box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+    }
+
+    .el-slider__button {
+      background: #00ff88;
+      border: 2px solid #00f6ff;
+      box-shadow: 0 0 15px rgba(0, 255, 136, 0.8);
+    }
+  }
+
   // 右侧面板
   .right-panel {
     width: 320px;
@@ -853,6 +1446,16 @@ onUnmounted(() => {
       display: flex;
       flex-direction: column;
       gap: 20px;
+      overflow-y: auto;
+
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: rgba(0, 246, 255, 0.3);
+        border-radius: 3px;
+      }
 
       .panel-title {
         font-size: 18px;
@@ -909,6 +1512,78 @@ onUnmounted(() => {
         }
       }
 
+      .spatial-spectral-section {
+        background: rgba(0, 21, 41, 0.6);
+        border: 1px solid rgba(0, 246, 255, 0.3);
+        border-radius: 8px;
+        padding: 15px;
+
+        .section-title {
+          font-size: 14px;
+          font-weight: bold;
+          color: #00f6ff;
+          margin-bottom: 15px;
+          text-shadow: 0 0 5px rgba(0, 246, 255, 0.5);
+        }
+
+        .imaging-container {
+          .chemical-imaging {
+            height: 250px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(0, 246, 255, 0.2);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+
+            &:hover {
+              border-color: rgba(0, 246, 255, 0.5);
+              box-shadow: 0 0 15px rgba(0, 246, 255, 0.3);
+            }
+          }
+
+          .channel-fusion {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+
+            .channel-item {
+              display: flex;
+              align-items: center;
+              gap: 10px;
+              padding: 8px;
+              background: rgba(0, 21, 41, 0.5);
+              border-radius: 6px;
+              border: 1px solid rgba(0, 246, 255, 0.2);
+              transition: all 0.3s;
+
+              &:hover {
+                border-color: rgba(0, 246, 255, 0.5);
+                box-shadow: 0 0 10px rgba(0, 246, 255, 0.3);
+              }
+
+              .channel-color {
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                box-shadow: 0 0 8px currentColor;
+              }
+
+              .channel-name {
+                flex: 1;
+                font-size: 13px;
+                color: #00f6ff;
+              }
+
+              .channel-value {
+                font-size: 13px;
+                font-weight: bold;
+                color: #00ff88;
+              }
+            }
+          }
+        }
+      }
+
       .params-section {
         background: rgba(0, 21, 41, 0.6);
         border: 1px solid rgba(0, 246, 255, 0.3);
@@ -949,8 +1624,7 @@ onUnmounted(() => {
       }
 
       .gauge-container {
-        flex: 1;
-        min-height: 200px;
+        height: 220px;
 
         .gauge {
           width: 100%;
