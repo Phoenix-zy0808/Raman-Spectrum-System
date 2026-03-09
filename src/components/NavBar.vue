@@ -24,7 +24,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
@@ -33,16 +33,16 @@ const route = useRoute()
 // 自动获取当前路径，用于判断高亮
 const currentPath = computed(() => route.path)
 
-// 核心配置：8大功能目录
+// 核心配置：功能菜单（隐藏未完成的页面）
 const menuList = [
   { name: '综合监控', path: '/dashboard' },
   { name: '数据管理', path: '/data-management' },
   { name: '光谱解析', path: '/analysis' },
   { name: '定量实验', path: '/quantitative' },
   { name: 'AI 模型', path: '/model-lab' },
-  { name: '量子视图', path: '/quantum' },
+  // { name: '量子视图', path: '/quantum' }, // 暂未完成，隐藏入口
   { name: '报告生成', path: '/report' },
-  { name: '系统监控', path: '/system' }
+  // { name: '系统监控', path: '/system' } // 暂未完成，隐藏入口
 ]
 
 const gotoPage = (path: string) => {
@@ -78,54 +78,76 @@ const gotoPage = (path: string) => {
       font-weight: bold;
       color: #b3efff;
       text-shadow: 0 0 10px rgba(0, 246, 255, 0.5);
-      letter-spacing: 2px;
-      margin-bottom: 5px;
     }
 
     .dv-dec-6 {
-      width: 200px;
-      height: 8px;
+      width: 100%;
+      height: 3px;
+      margin-top: 8px;
     }
   }
 
   .nav-btn-group {
     display: flex;
-    gap: 10px;
-    flex: 1;
-    justify-content: flex-end;
-    overflow-x: auto; /* 防止屏幕太小放不下 */
+    gap: 12px;
+  }
 
-    .nav-btn {
-      min-width: 100px;
-      height: 36px;
-      line-height: 36px;
-      text-align: center;
-      background: rgba(0, 50, 150, 0.3);
-      border: 1px solid #0055ff;
-      transform: skewX(-20deg);
-      cursor: pointer;
-      color: #00baff;
+  .nav-btn {
+    position: relative;
+    padding: 10px 20px;
+    cursor: pointer;
+    overflow: hidden;
+    border: 1px solid rgba(80, 227, 194, 0.3);
+    border-radius: 4px;
+    background: rgba(0, 21, 41, 0.6);
+    transition: all 0.3s ease;
+
+    .text {
       font-size: 14px;
-      font-weight: bold;
-      transition: all 0.3s;
+      color: rgba(179, 239, 255, 0.8);
       position: relative;
-      padding: 0 10px;
+      z-index: 2;
+    }
+
+    .react-before,
+    .react-after {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      content: '';
+      z-index: 1;
+      transition: all 0.3s ease;
+    }
+
+    .react-before {
+      background: linear-gradient(90deg, transparent, rgba(80, 227, 194, 0.2), transparent);
+      transform: translateX(-100%);
+    }
+
+    .react-after {
+      background: linear-gradient(90deg, transparent, rgba(80, 227, 194, 0.1), transparent);
+      transform: translateX(100%);
+    }
+
+    &:hover {
+      border-color: rgba(80, 227, 194, 0.6);
+      box-shadow: 0 0 15px rgba(80, 227, 194, 0.3);
+
+      .react-before {
+        transform: translateX(0);
+      }
+    }
+
+    &.active {
+      background: rgba(80, 227, 194, 0.2);
+      border-color: #50e3c2;
+      box-shadow: 0 0 20px rgba(80, 227, 194, 0.5);
 
       .text {
-        display: inline-block;
-        transform: skewX(20deg);
-      }
-
-      &:hover {
-        box-shadow: 0 0 15px #00e5ff inset;
         color: #fff;
-      }
-
-      &.active {
-        background: rgba(0, 229, 255, 0.3);
-        border-color: #00e5ff;
-        color: #fff;
-        box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+        font-weight: 600;
       }
     }
   }

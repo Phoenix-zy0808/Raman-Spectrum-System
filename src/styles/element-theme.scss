@@ -1,0 +1,328 @@
+/**
+ * 全局样式 - Element Plus 主题覆盖
+ * 使用 Design Token 系统统一样式
+ */
+
+@import './variables.scss';
+@import './mixins.scss';
+
+// ========== Element Plus 下拉框样式 ==========
+.el-select-dropdown {
+  background-color: $bg-card !important;
+  border: 1px solid $border-color !important;
+  box-shadow: $shadow-glow !important;
+}
+
+.el-select-dropdown__item {
+  color: $text-primary !important;
+  @include transition(all, 0.3s, ease);
+
+  &:hover {
+    background-color: $transparent-hover !important;
+    color: $secondary-color !important;
+  }
+
+  &.selected {
+    background-color: $transparent-active !important;
+    color: $secondary-color !important;
+    font-weight: bold;
+  }
+}
+
+.el-popper__arrow::before {
+  background: $bg-card !important;
+  border: 1px solid $border-color !important;
+}
+
+// ========== Input Number 样式 ==========
+.el-input-number__decrease,
+.el-input-number__increase {
+  background-color: $transparent-primary !important;
+  border-color: $border-light !important;
+  color: $text-primary !important;
+
+  &:hover {
+    background-color: $transparent-hover !important;
+    color: $secondary-color !important;
+  }
+}
+
+.el-input-number__inner {
+  background-color: $transparent-primary !important;
+  border-color: $border-color !important;
+  color: $text-primary !important;
+}
+
+// ========== Tooltip 样式 ==========
+.el-tooltip__popper {
+  background-color: $bg-card !important;
+  border: 1px solid $border-color !important;
+  color: $text-primary !important;
+}
+
+.el-popper.is-dark {
+  background: $bg-card !important;
+  border: 1px solid $border-color !important;
+
+  .el-popper__arrow::before {
+    background: $bg-card !important;
+    border: 1px solid $border-color !important;
+  }
+}
+
+// ========== Message 样式 ==========
+.el-message {
+  background-color: $bg-card !important;
+  border-color: $border-color !important;
+  box-shadow: $shadow-lg !important;
+
+  &.el-message--success {
+    .el-message__content {
+      color: $success-color;
+    }
+  }
+
+  &.el-message--warning {
+    .el-message__content {
+      color: $warning-color;
+    }
+  }
+
+  &.el-message--error {
+    .el-message__content {
+      color: $error-color;
+    }
+  }
+
+  &.el-message--info {
+    .el-message__content {
+      color: $info-color;
+    }
+  }
+}
+
+// ========== Notification 样式 ==========
+.el-notification {
+  background-color: $bg-card !important;
+  border: 1px solid $border-color !important;
+  box-shadow: $shadow-lg !important;
+
+  .el-notification__title {
+    color: $text-primary;
+  }
+
+  .el-notification__content {
+    color: $text-regular;
+  }
+
+  &.el-notification--success {
+    .el-notification__title {
+      color: $success-color;
+    }
+  }
+
+  &.el-notification--warning {
+    .el-notification__title {
+      color: $warning-color;
+    }
+  }
+
+  &.el-notification--error {
+    .el-notification__title {
+      color: $error-color;
+    }
+  }
+
+  &.el-notification--info {
+    .el-notification__title {
+      color: $info-color;
+    }
+  }
+}
+
+// ========== Button 样式 ==========
+.el-button {
+  &.el-button--primary {
+    --el-button-bg-color: $primary-color;
+    --el-button-border-color: $primary-color;
+    --el-button-hover-bg-color: $primary-light;
+    --el-button-hover-border-color: $primary-light;
+  }
+
+  &.el-button--success {
+    --el-button-bg-color: $secondary-color;
+    --el-button-border-color: $secondary-color;
+    --el-button-hover-bg-color: $secondary-light;
+    --el-button-hover-border-color: $secondary-light;
+  }
+
+  &.el-button--warning {
+    --el-button-bg-color: $warning-color;
+    --el-button-border-color: $warning-color;
+    --el-button-hover-bg-color: lighten($warning-color, 10%);
+    --el-button-hover-border-color: lighten($warning-color, 10%);
+  }
+
+  &.el-button--danger {
+    --el-button-bg-color: $error-color;
+    --el-button-border-color: $error-color;
+    --el-button-hover-bg-color: lighten($error-color, 10%);
+    --el-button-hover-border-color: lighten($error-color, 10%);
+  }
+}
+
+// ========== Input 样式 ==========
+.el-input__wrapper {
+  background-color: $transparent-primary !important;
+  box-shadow: none !important;
+
+  .el-input__inner {
+    color: $text-primary !important;
+
+    &::placeholder {
+      color: $text-placeholder !important;
+    }
+  }
+
+  &.is-focus {
+    box-shadow: 0 0 0 1px $secondary-color inset !important;
+  }
+}
+
+// ========== Table 样式 ==========
+.el-table {
+  --el-table-bg-color: $transparent-primary !important;
+  --el-table-tr-bg-color: transparent !important;
+  --el-table-header-bg-color: $transparent-hover !important;
+  --el-table-text-color: $text-regular !important;
+  --el-table-header-text-color: $text-primary !important;
+  --el-table-border-color: $border-light !important;
+  --el-table-row-hover-bg-color: $transparent-hover !important;
+  --el-table-current-row-bg-color: $transparent-active !important;
+
+  .el-table__body tr {
+    background-color: transparent !important;
+  }
+}
+
+// ========== Dialog 样式 ==========
+.el-dialog {
+  background-color: $bg-card !important;
+  border: 1px solid $border-color !important;
+
+  .el-dialog__header {
+    border-bottom: 1px solid $border-light !important;
+  }
+
+  .el-dialog__title {
+    color: $text-primary !important;
+  }
+
+  .el-dialog__body {
+    color: $text-regular !important;
+  }
+
+  .el-dialog__footer {
+    border-top: 1px solid $border-light !important;
+  }
+}
+
+// ========== Loading 样式 ==========
+.el-loading-mask {
+  background-color: $bg-overlay !important;
+
+  .el-loading-spinner {
+    .path {
+      stroke: $primary-color;
+    }
+
+    .el-loading-text {
+      color: $text-primary !important;
+    }
+  }
+}
+
+// ========== Progress 样式 ==========
+.el-progress {
+  &.el-progress--line {
+    .el-progress-bar__outer {
+      background-color: $transparent-primary !important;
+    }
+
+    .el-progress-bar__inner {
+      background-color: $primary-color !important;
+    }
+  }
+
+  &.el-progress--circle {
+    .el-progress__text {
+      color: $text-primary !important;
+    }
+  }
+}
+
+// ========== Tag 样式 ==========
+.el-tag {
+  &.el-tag--info {
+    background-color: $transparent-primary !important;
+    border-color: $primary-color !important;
+    color: $primary-light !important;
+  }
+
+  &.el-tag--success {
+    background-color: $transparent-primary !important;
+    border-color: $secondary-color !important;
+    color: $secondary-color !important;
+  }
+
+  &.el-tag--warning {
+    background-color: $transparent-primary !important;
+    border-color: $warning-color !important;
+    color: $warning-color !important;
+  }
+
+  &.el-tag--danger {
+    background-color: $transparent-primary !important;
+    border-color: $error-color !important;
+    color: $error-color !important;
+  }
+}
+
+// ========== Scrollbar 样式（全局） ==========
+@include custom-scrollbar;
+
+// ========== 滚动条样式（全局） ==========
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: $transparent-secondary;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: $transparent-hover;
+  border-radius: 4px;
+  @include transition(background, 0.3s, ease);
+
+  &:hover {
+    background: $primary-light;
+  }
+
+  &:active {
+    background: $primary-color;
+  }
+}
+
+// ========== 选中文案样式 ==========
+::selection {
+  background-color: $transparent-hover;
+  color: $text-primary;
+}
+
+::-moz-selection {
+  background-color: $transparent-hover;
+  color: $text-primary;
+}

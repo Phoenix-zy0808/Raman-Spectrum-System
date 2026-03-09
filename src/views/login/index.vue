@@ -98,12 +98,21 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios' // 引入 axios
 
 const router = useRouter()
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const username = ref('')
 const password = ref('')
 const isLoading = ref(false)
+
+// ==========================================
+// 前后端联调：配置 Axios
+// ==========================================
+const service = axios.create({
+  baseURL: 'https://3c9075af.r28.cpolar.top', // 同学的内网穿透地址
+  timeout: 10000
+})
 
 // 绘制拉曼光谱波形背景
 const drawWaveformBackground = () => {
@@ -174,6 +183,7 @@ const drawWaveformBackground = () => {
   }
 }
 
+// 核心修改：真实的登录请求逻辑
 const handleLogin = async () => {
   // 1. 检查是否为空
   if (!username.value || !password.value) {
@@ -183,22 +193,33 @@ const handleLogin = async () => {
 
   isLoading.value = true
   try {
-    // 模拟加载延迟（保留这个为了让效果更真实）
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    // 2. 发送真正的登录请求到后端
+    // 【注意】这里假设接口路径是 '/login'，如果后端说是 '/api/login'，请把这里的 '/login' 改掉
+    const response = await service.post('/login', {
+      username: username.value,
+      password: password.value
+    })
 
-    // 2. 核心修改：验证账号密码
-    if (username.value === 'user' && password.value === '123456') {
-      console.log('登录成功')
-      // 跳转到首页 (确保你的路由里配置的是 /index)
+    console.log('后端返回的完整数据:', response)
+
+    // 3. 判断是否登录成功
+    // 【注意】大部分后端成功时返回的 code 是 200。你需要跟后端确认一下他的成功标识是什么。
+    if (response.data && response.data.code === 200) {
+      console.log('登录成功！')
+
+      // 如果后端返回了 token，你可以将下面的代码取消注释，把 token 存起来
+      // localStorage.setItem('token', response.data.data.token)
+
+      // 跳转到首页 (确保你的路由里配置的是 /dashboard)
       await router.push('/dashboard')
     } else {
-      // 密码错误的提示
-      alert('用户名或密码错误！')
+      // 登录失败，显示后端返回的错误信息（如果没有返回信息，默认提示账号密码错误）
+      alert(response.data.message || response.data.msg || '用户名或密码错误！')
     }
 
   } catch (error) {
     console.error('Login error:', error)
-    alert('系统异常，请重试')
+    alert('网络请求失败！请检查后端服务是否启动，或者按 F12 查看 Network 报错信息。')
   } finally {
     // 无论成功失败，最后都要停止加载动画
     isLoading.value = false

@@ -1,0 +1,152 @@
+/**
+ * Design Token 系统 - 颜色变量
+ * 统一管理系统所有颜色，支持主题切换
+ */
+
+// ========== 主题色 ==========
+$primary-color: #00b0f0 !default;
+$primary-light: #00e5ff !default;
+$primary-dark: #0088cc !default;
+
+$secondary-color: #00ff88 !default;
+$secondary-light: #66ffbb !default;
+$secondary-dark: #00cc6a !default;
+
+$accent-color: #0033cc !default;
+$accent-light: #3366ff !default;
+$accent-dark: #002299 !default;
+
+// ========== 背景色 ==========
+$bg-dark: #020308 !default;
+$bg-darker: #001529 !default;
+$bg-light: #00274d !default;
+$bg-card: rgba(0, 21, 41, 0.95) !default;
+$bg-overlay: rgba(0, 0, 0, 0.5) !default;
+
+// ========== 文字颜色 ==========
+$text-primary: #00e5ff !default;
+$text-secondary: #00b0f0 !default;
+$text-regular: #66b2ff !default;
+$text-placeholder: rgba(0, 229, 255, 0.5) !default;
+$text-disabled: rgba(0, 229, 255, 0.3) !default;
+
+// ========== 边框颜色 ==========
+$border-color: rgba(0, 176, 240, 0.5) !default;
+$border-light: rgba(0, 229, 255, 0.3) !default;
+$border-dark: rgba(0, 176, 240, 0.8) !default;
+
+// ========== 功能色 ==========
+$success-color: #00ff88 !default;
+$warning-color: #ffaa00 !default;
+$error-color: #ff4040 !default;
+$info-color: #00b0f0 !default;
+
+// ========== 渐变色 ==========
+$gradient-primary: linear-gradient(135deg, $primary-color, $secondary-color) !default;
+$gradient-dark: linear-gradient(135deg, $bg-darker 0%, $bg-light 100%) !default;
+$gradient-text: linear-gradient(90deg, $primary-color, $secondary-color) !default;
+$gradient-border: linear-gradient(135deg, $primary-color, $secondary-color, $accent-color) !default;
+
+// ========== 阴影 ==========
+$shadow-sm: 0 0 10px rgba(0, 176, 240, 0.1) !default;
+$shadow-md: 0 0 20px rgba(0, 176, 240, 0.2) !default;
+$shadow-lg: 0 0 30px rgba(0, 255, 136, 0.3) !default;
+$shadow-glow: 0 0 20px rgba(0, 229, 255, 0.3) !default;
+$shadow-glow-strong: 0 0 30px rgba(0, 255, 136, 0.6) !default;
+
+// ========== 透明色 ==========
+$transparent-primary: rgba(0, 176, 240, 0.1) !default;
+$transparent-secondary: rgba(0, 229, 255, 0.05) !default;
+$transparent-hover: rgba(0, 229, 255, 0.2) !default;
+$transparent-active: rgba(0, 255, 127, 0.2) !default;
+
+// ========== CSS Variables 映射 ==========
+:root {
+  // 主题色
+  --color-primary: #{$primary-color};
+  --color-primary-light: #{$primary-light};
+  --color-primary-dark: #{$primary-dark};
+
+  --color-secondary: #{$secondary-color};
+  --color-secondary-light: #{$secondary-light};
+  --color-secondary-dark: #{$secondary-dark};
+
+  --color-accent: #{$accent-color};
+  --color-accent-light: #{$accent-light};
+  --color-accent-dark: #{$accent-dark};
+
+  // 背景色
+  --bg-dark: #{$bg-dark};
+  --bg-darker: #{$bg-darker};
+  --bg-light: #{$bg-light};
+  --bg-card: #{$bg-card};
+  --bg-overlay: #{$bg-overlay};
+
+  // 文字颜色
+  --text-primary: #{$text-primary};
+  --text-secondary: #{$text-secondary};
+  --text-regular: #{$text-regular};
+  --text-placeholder: #{$text-placeholder};
+  --text-disabled: #{$text-disabled};
+
+  // 边框颜色
+  --border-color: #{$border-color};
+  --border-light: #{$border-light};
+  --border-dark: #{$border-dark};
+
+  // 功能色
+  --color-success: #{$success-color};
+  --color-warning: #{$warning-color};
+  --color-error: #{$error-color};
+  --color-info: #{$info-color};
+
+  // 阴影
+  --shadow-sm: #{$shadow-sm};
+  --shadow-md: #{$shadow-md};
+  --shadow-lg: #{$shadow-lg};
+  --shadow-glow: #{$shadow-glow};
+  --shadow-glow-strong: #{$shadow-glow-strong};
+
+  // 透明色
+  --transparent-primary: #{$transparent-primary};
+  --transparent-secondary: #{$transparent-secondary};
+  --transparent-hover: #{$transparent-hover};
+  --transparent-active: #{$transparent-active};
+}
+
+// ========== 导出 SCSS 变量供外部使用 ==========
+
+// 颜色映射表（用于动态主题）
+$color-map: (
+  'primary': $primary-color,
+  'primary-light': $primary-light,
+  'primary-dark': $primary-dark,
+  'secondary': $secondary-color,
+  'secondary-light': $secondary-light,
+  'secondary-dark': $secondary-dark,
+  'accent': $accent-color,
+  'accent-light': $accent-light,
+  'accent-dark': $accent-dark,
+  'success': $success-color,
+  'warning': $warning-color,
+  'error': $error-color,
+  'info': $info-color,
+) !default;
+
+// 背景色映射表
+$bg-map: (
+  'dark': $bg-dark,
+  'darker': $bg-darker,
+  'light': $bg-light,
+  'card': $bg-card,
+  'overlay': $bg-overlay,
+) !default;
+
+// 文字颜色映射表
+$text-map: (
+  'primary': $text-primary,
+  'secondary': $text-secondary,
+  'regular': $text-regular,
+  'placeholder': $text-placeholder,
+  'disabled': $text-disabled,
+) !default;

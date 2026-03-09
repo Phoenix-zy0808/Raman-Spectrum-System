@@ -25,30 +25,19 @@
             </div>
 
             <!-- 数据导入按钮 -->
-            <el-button class="import-btn" @click="triggerFileUpload">
+            <el-button class="import-btn">
               <el-icon><Monitor /></el-icon>
               <span>数据导入</span>
             </el-button>
 
-            <!-- 隐藏的文件输入 -->
-            <input
-              ref="fileInputRef"
-              type="file"
-              accept=".txt,.csv,.spc,.dat"
-              style="display: none"
-              @change="handleFileChange"
-            />
-
             <!-- 文件树 -->
             <div class="tree-container">
               <ElTree
-                ref="treeRef"
                 :data="sampleTreeData"
                 :props="{ children: 'children', label: 'label' }"
                 node-key="id"
                 default-expand-all
                 @node-click="handleNodeClick"
-                @node-contextmenu="handleNodeContextmenu"
                 class="sample-tree"
               >
                 <template #default="{ node, data }">
@@ -64,35 +53,6 @@
                   </span>
                 </template>
               </ElTree>
-            </div>
-
-            <!-- 右键菜单 -->
-            <div
-              v-if="contextMenuVisible"
-              class="context-menu"
-              :style="{ top: contextMenuPosition.y + 'px', left: contextMenuPosition.x + 'px' }"
-              @click.stop
-            >
-              <div class="context-menu-item" @click="handleRename">
-                <el-icon><Edit /></el-icon>
-                <span>重命名</span>
-              </div>
-              <div class="context-menu-item" @click="handleDelete">
-                <el-icon><Delete /></el-icon>
-                <span>删除</span>
-              </div>
-              <div v-if="contextMenuData?.type === 'folder'" class="context-menu-item" @click="handleCreateSubFolder">
-                <el-icon><FolderAdd /></el-icon>
-                <span>新建子文件夹</span>
-              </div>
-              <div v-if="contextMenuData?.type === 'file'" class="context-menu-item" @click="handleDownload">
-                <el-icon><Download /></el-icon>
-                <span>下载</span>
-              </div>
-              <div v-if="contextMenuData?.type === 'file'" class="context-menu-item" @click="addToComparison(contextMenuData)">
-                <el-icon><DataLine /></el-icon>
-                <span>添加到对比</span>
-              </div>
             </div>
           </div>
         </DvBorderBox13>
@@ -110,46 +70,7 @@
                   <span class="title-icon">📈</span>
                   <span>拉曼光谱</span>
                 </div>
-                <div class="card-actions">
-                  <el-button size="small" @click="toggleComparisonMode" :type="comparisonMode ? 'primary' : 'info'">
-                    <el-icon><DataLine /></el-icon>
-                    {{ comparisonMode ? '退出对比' : '多光谱对比' }}
-                  </el-button>
-                  <el-button v-if="comparisonMode" size="small" @click="clearAllComparison" type="warning">
-                    <el-icon><Delete /></el-icon>
-                    清空对比
-                  </el-button>
-                </div>
               </div>
-              
-              <!-- 多光谱对比列表 -->
-              <div v-if="comparisonMode" class="comparison-list">
-                <div
-                  v-for="spectrum in comparisonSpectra"
-                  :key="spectrum.id"
-                  class="comparison-item"
-                  :style="{ borderColor: spectrum.color }"
-                >
-                  <span class="item-name">{{ spectrum.name }}</span>
-                  <div class="item-actions">
-                    <span
-                      class="visibility-toggle"
-                      :style="{ color: spectrum.visible ? spectrum.color : '#666' }"
-                      @click="toggleComparisonVisibility(spectrum.id)"
-                    >
-                      {{ spectrum.visible ? '👁️' : '👁️‍🗨️' }}
-                    </span>
-                    <el-icon class="remove-btn" @click="removeComparisonSpectrum(spectrum.id)">
-                      <Close />
-                    </el-icon>
-                  </div>
-                </div>
-                <div class="comparison-add-hint" v-if="comparisonSpectra.length === 0">
-                  <el-icon><InfoFilled /></el-icon>
-                  <span>右键点击文件树中的文件，选择"添加到对比"</span>
-                </div>
-              </div>
-              
               <div class="chart-wrapper">
                 <div ref="ramanChartRef" class="raman-chart"></div>
               </div>
@@ -162,7 +83,7 @@
           <DvBorderBox13>
             <div class="card-inner">
 
-              <!-- 头部：标题 + 提示 (单行不换行) + 操作按钮 -->
+              <!-- 头部：标题 + 提示(单行不换行) + 操作按钮 -->
               <div class="matching-header">
                 <div class="matching-title-group">
                   <div class="card-title">
@@ -174,8 +95,8 @@
                   </span>
                 </div>
                 <div class="matching-actions">
-                  <button class="secondary-btn" @click="startPeakAnalysis">开始寻峰</button>
-                  <button class="primary-action-btn" @click="exportData">
+                  <button class="secondary-btn">新增峰位</button>
+                  <button class="primary-action-btn">
                     <el-icon><InfoFilled /></el-icon>
                     导出数据
                   </button>
@@ -264,618 +185,121 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import type { ECharts } from 'echarts'
-import { ElMessage, ElLoading, ElMessageBox } from 'element-plus'
 import NavBar from '@/components/NavBar.vue'
-import { useSpectrumStore } from '@/store/spectrum'
-import {
-  uploadSpectrumFile,
-  getFileList,
-  getSpectrumData,
-  analyzePeaks,
-  deleteFile,
-} from '@/api/spectrum'
 import {
   Search, Plus, Monitor, FolderOpened, Folder,
-  Document, Delete, InfoFilled, Upload, Refresh,
-  Edit, FolderAdd, Download, DataLine, Close
+  Document, Delete, InfoFilled
 } from '@element-plus/icons-vue'
-
-// ─────────────────────── Store ───────────────────────
-const spectrumStore = useSpectrumStore()
 
 // ─────────────────────── 状态 ───────────────────────
 const searchKeyword = ref('')
-const selectedNode = ref<string>('')
-const fileInputRef = ref<HTMLInputElement>()
-const treeRef = ref()
+const selectedNode  = ref('1-1')
 
-// 文件树数据
-const sampleTreeData = ref<any[]>([])
+const sampleTreeData = ref([
+  {
+    id: '1', label: '默认分组', type: 'folder',
+    children: [
+      { id: '1-1', label: '聚苯乙烯标...', type: 'file' },
+      { id: '1-2', label: '聚苯乙烯标...', type: 'file' },
+    ]
+  },
+  {
+    id: '2', label: '常用方案', type: 'folder',
+    children: [
+      { id: '2-1', label: '标准汽油样本', type: 'file' },
+      { id: '2-2', label: '柴油混合物',   type: 'file' },
+    ]
+  }
+])
 
-// 右键菜单相关
-const contextMenuVisible = ref(false)
-const contextMenuPosition = ref({ x: 0, y: 0 })
-const contextMenuData = ref<any>(null)
+const peakData = ref([
+  {
+    index: 1, peak: '3059.10',
+    vibrations: [
+      { type: '铵根伸缩振动', checked: true },
+      { type: 'O-H伸缩振动', checked: true },
+      { type: '氢键',        checked: true },
+      { type: 'C-H伸缩振动', checked: true },
+      { type: 'O-H伸缩振动', checked: true },
+    ]
+  },
+  {
+    index: 2, peak: '3028.24',
+    vibrations: [
+      { type: '氢键',        checked: true },
+      { type: 'C-H伸缩振动', checked: true },
+      { type: 'O-H伸缩振动', checked: true },
+    ]
+  },
+  {
+    index: 3, peak: '3001.24',
+    vibrations: [
+      { type: '氢键',        checked: true },
+      { type: 'C-H伸缩振动', checked: true },
+      { type: 'O-H伸缩振动', checked: true },
+    ]
+  },
+  {
+    index: 4, peak: '2910.58',
+    vibrations: [
+      { type: 'C-H伸缩振动', checked: true },
+      { type: 'C-H伸缩振动', checked: true },
+    ]
+  },
+  {
+    index: 5, peak: '2848.86',
+    vibrations: [
+      { type: 'C-H伸缩振动', checked: true },
+      { type: 'O-H伸缩振动', checked: true },
+    ]
+  },
+  {
+    index: 6, peak: '2630.91',
+    vibrations: [
+      { type: 'O-H伸缩振动', checked: true },
+    ]
+  },
+  {
+    index: 7, peak: '2075.41',
+    vibrations: [
+      { type: 'CN-', checked: true },
+    ]
+  },
+])
 
-// 多光谱对比相关
-const comparisonMode = ref(false)
-const comparisonSpectra = computed(() => spectrumStore.comparisonSpectra)
-
-// 峰位数据
-const peakData = ref<Array<{
-  index: number
-  peak: string
-  vibrations: Array<{ type: string; checked: boolean }>
-}>>([])
-
-// 元素选择
 const elements = ref([
-  { symbol: 'C', selected: true },
-  { symbol: 'O', selected: true },
-  { symbol: 'H', selected: true },
-  { symbol: 'N', selected: false },
-  { symbol: 'S', selected: false },
-  { symbol: 'P', selected: false },
+  { symbol: 'C',  selected: true  },
+  { symbol: 'O',  selected: true  },
+  { symbol: 'H',  selected: true  },
+  { symbol: 'N',  selected: false },
+  { symbol: 'S',  selected: false },
+  { symbol: 'P',  selected: false },
   { symbol: 'Si', selected: false },
   { symbol: 'Cr', selected: false },
   { symbol: 'Mn', selected: false },
-  { symbol: 'F', selected: false },
+  { symbol: 'F',  selected: false },
   { symbol: 'Cl', selected: false },
   { symbol: 'Br', selected: false },
-  { symbol: 'I', selected: false },
+  { symbol: 'I',  selected: false },
   { symbol: 'Al', selected: false },
   { symbol: 'Ti', selected: false },
   { symbol: 'Zn', selected: false },
   { symbol: 'Fe', selected: false },
 ])
 
+// ─────────────────────── 操作 ───────────────────────
+const selectAllElements = () => elements.value.forEach(e => e.selected = true)
+const clearAllElements  = () => elements.value.forEach(e => e.selected = false)
+const handleNodeClick   = (data: any) => { if (data.type === 'file') selectedNode.value = data.id }
+
 // ─────────────────────── 图表 ───────────────────────
 const ramanChartRef = ref<HTMLElement>()
 let ramanChart: ECharts | null = null
 
-// 峰位标注列表（用于图表显示）
-const peakLabels = ref<Array<{ x: number; label: string }>>([])
-
-// ─────────────────────── 操作 ───────────────────────
-
-/**
- * 触发文件上传
- */
-const triggerFileUpload = () => {
-  fileInputRef.value?.click()
-}
-
-/**
- * 处理文件选择
- */
-const handleFileChange = async (event: Event) => {
-  const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
-  if (!file) return
-
-  // 创建进度提示
-  let uploadProgress = 0
-  let progressMessage = ElMessage({
-    message: `正在上传：${file.name} - ${uploadProgress}%`,
-    type: 'info',
-    duration: 0, // 不自动关闭
-    showClose: false,
-  })
-
-  try {
-    // 获取选中的元素列表
-    const selectedElements = elements.value
-      .filter(e => e.selected)
-      .map(e => e.symbol)
-      .join(',')
-
-    // 上传文件，带进度回调
-    const result = await uploadSpectrumFile(
-      file,
-      selectedElements || undefined,
-      (percent: number) => {
-        uploadProgress = percent
-        // 更新进度提示
-        progressMessage.close()
-        if (percent < 100) {
-          progressMessage = ElMessage({
-            message: `正在上传：${file.name} - ${percent}%`,
-            type: 'info',
-            duration: 0,
-            showClose: false,
-          })
-        }
-      }
-    )
-
-    // 关闭进度提示，显示成功消息
-    progressMessage.close()
-    ElMessage.success(`文件 "${file.name}" 上传成功`)
-
-    // 刷新文件列表
-    await loadFileList()
-
-    // 如果返回了 file_id，自动加载该文件的光谱数据
-    if (result.file_id) {
-      currentFileId.value = result.file_id
-      currentFileName.value = result.file_name
-      store.setCurrentFile(result.file_id, result.file_name)
-      await loadSpectrumData(result.file_id)
-    }
-  } catch (error: any) {
-    progressMessage.close()
-    ElMessage.error(`上传失败：${error.message || '未知错误'}`)
-  } finally {
-    // 清空 input，允许重复上传同一文件
-    target.value = ''
-  }
-}
-
-/**
- * 加载文件列表并转换为树形结构
- */
-const loadFileList = async () => {
-  try {
-    const result = await getFileList()
-    const files = result.files || []
-    
-    // 将文件列表转换为树形结构（按元素分组）
-    const folderMap = new Map<string, any>()
-    const treeData: any[] = []
-    
-    files.forEach((file, index) => {
-      const folderName = file.element || '未分类'
-      
-      if (!folderMap.has(folderName)) {
-        const folder = {
-          id: `folder-${folderName}`,
-          label: folderName,
-          type: 'folder',
-          children: [],
-        }
-        folderMap.set(folderName, folder)
-        treeData.push(folder)
-      }
-      
-      folderMap.get(folderName).children.push({
-        id: file.file_id,
-        label: file.file_name,
-        type: 'file',
-        fileId: file.file_id,
-      })
-    })
-    
-    sampleTreeData.value = treeData
-    
-    // 如果没有选中节点且有文件，默认选中第一个
-    if (!selectedNode.value && treeData.length > 0 && treeData[0].children?.length > 0) {
-      const firstFile = treeData[0].children[0]
-      selectedNode.value = firstFile.id
-      await loadSpectrumData(firstFile.fileId)
-    }
-  } catch (error: any) {
-    ElMessage.error(`加载文件列表失败：${error.message || '未知错误'}`)
-  }
-}
-
-/**
- * 处理树节点点击
- */
-const handleNodeClick = async (data: any) => {
-  if (data.type === 'file') {
-    selectedNode.value = data.id
-    await loadSpectrumData(data.fileId)
-  }
-}
-
-/**
- * 处理右键菜单
- */
-const handleNodeContextmenu = (event: MouseEvent, data: any) => {
-  event.preventDefault()
-  event.stopPropagation()
-  
-  contextMenuData.value = data
-  contextMenuPosition.value = {
-    x: event.clientX,
-    y: event.clientY,
-  }
-  contextMenuVisible.value = true
-}
-
-/**
- * 关闭右键菜单
- */
-const closeContextMenu = () => {
-  contextMenuVisible.value = false
-  contextMenuData.value = null
-}
-
-/**
- * 重命名文件/文件夹
- */
-const handleRename = async () => {
-  closeContextMenu()
-  if (!contextMenuData.value) return
-  
-  try {
-    const { value } = await ElMessageBox.prompt('请输入新名称', '重命名', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      inputValue: contextMenuData.value.label,
-      inputPattern: /.+/,
-      inputErrorMessage: '名称不能为空',
-    })
-    
-    // TODO: 调用后端 API 重命名
-    contextMenuData.value.label = value
-    ElMessage.success('重命名成功')
-  } catch (error: any) {
-    if (error !== 'cancel') {
-      ElMessage.error('重命名失败')
-    }
-  }
-}
-
-/**
- * 删除文件/文件夹
- */
-const handleDelete = async () => {
-  closeContextMenu()
-  if (!contextMenuData.value) return
-  
-  try {
-    await ElMessageBox.confirm(
-      `确定要删除 "${contextMenuData.value.label}" 吗？`,
-      '删除确认',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
-    )
-    
-    if (contextMenuData.value.type === 'file') {
-      await deleteFile(contextMenuData.value.id)
-    }
-    
-    await loadFileList()
-    ElMessage.success('删除成功')
-  } catch (error: any) {
-    if (error !== 'cancel') {
-      ElMessage.error('删除失败')
-    }
-  }
-}
-
-/**
- * 新建子文件夹
- */
-const handleCreateSubFolder = async () => {
-  closeContextMenu()
-  if (!contextMenuData.value) return
-  
-  try {
-    const { value } = await ElMessageBox.prompt('请输入文件夹名称', '新建文件夹', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      inputPattern: /.+/,
-      inputErrorMessage: '名称不能为空',
-    })
-    
-    // TODO: 调用后端 API 创建文件夹
-    ElMessage.success('创建成功')
-    await loadFileList()
-  } catch (error: any) {
-    if (error !== 'cancel') {
-      ElMessage.error('创建失败')
-    }
-  }
-}
-
-/**
- * 下载文件
- */
-const handleDownload = () => {
-  closeContextMenu()
-  if (!contextMenuData.value) return
-
-  ElMessage.info('下载功能待实现')
-}
-
-/**
- * 添加到对比
- */
-const addToComparison = async (data: any) => {
-  closeContextMenu()
-  if (!data || data.type !== 'file') return
-  
-  const loading = ElLoading.service({
-    lock: true,
-    text: '正在加载光谱...',
-    background: 'rgba(0, 0, 0, 0.7)',
-  })
-  
-  try {
-    const result = await getSpectrumData(data.id)
-    const spectrumData = result.spectrum || []
-    
-    // 生成随机颜色
-    const colors = ['#ff4040', '#40a9ff', '#52c41a', '#faad14', '#722ed1', '#eb2f96']
-    const randomColor = colors[Math.floor(Math.random() * colors.length)]
-    
-    // 添加到 store
-    spectrumStore.addComparisonSpectrum({
-      id: data.id,
-      name: data.label,
-      data: spectrumData,
-      color: randomColor,
-      visible: true,
-    })
-    
-    // 开启对比模式
-    comparisonMode.value = true
-    
-    // 更新图表
-    updateComparisonChart()
-    
-    ElMessage.success(`已添加 "${data.label}" 到对比`)
-  } catch (error: any) {
-    ElMessage.error(`加载失败：${error.message || '未知错误'}`)
-  } finally {
-    loading.close()
-  }
-}
-
-/**
- * 切换对比模式
- */
-const toggleComparisonMode = () => {
-  comparisonMode.value = !comparisonMode.value
-  if (comparisonMode.value) {
-    updateComparisonChart()
-  } else {
-    updateChart(spectrumStore.rawSpectrumData)
-  }
-}
-
-/**
- * 清空对比
- */
-const clearAllComparison = () => {
-  spectrumStore.clearComparisonSpectra()
-  updateChart(spectrumStore.rawSpectrumData)
-  ElMessage.success('已清空对比')
-}
-
-/**
- * 移除对比光谱
- */
-const removeComparisonSpectrum = (id: string) => {
-  spectrumStore.removeComparisonSpectrum(id)
-  updateComparisonChart()
-}
-
-/**
- * 切换对比光谱可见性
- */
-const toggleComparisonVisibility = (id: string) => {
-  spectrumStore.toggleComparisonSpectrum(id)
-  updateComparisonChart()
-}
-
-/**
- * 更新对比图表
- */
-const updateComparisonChart = () => {
-  if (!ramanChart) return
-  
-  const mainData = spectrumStore.rawSpectrumData
-  const comparisonData = spectrumStore.comparisonSpectra
-  
-  const series = [
-    {
-      type: 'line',
-      data: mainData,
-      smooth: false,
-      showSymbol: false,
-      lineStyle: { width: 2, color: '#ff4040' },
-      name: '当前光谱',
-    },
-    ...comparisonData
-      .filter(s => s.visible)
-      .map(s => ({
-        type: 'line',
-        data: s.data,
-        smooth: false,
-        showSymbol: false,
-        lineStyle: { width: 1.5, color: s.color, type: 'dashed' as const },
-        name: s.name,
-      })),
-  ]
-  
-  ramanChart.setOption({
-    series,
-    legend: {
-      show: comparisonData.length > 0,
-      top: 10,
-      right: 20,
-      textStyle: { color: '#00c8ff', fontSize: 11 },
-      data: ['当前光谱', ...comparisonData.filter(s => s.visible).map(s => s.name)],
-    },
-  })
-}
-
-/**
- * 加载光谱数据并渲染图表
- */
-const loadSpectrumData = async (fileId: string) => {
-  const loading = ElLoading.service({
-    lock: true,
-    text: '正在加载光谱数据...',
-    background: 'rgba(0, 0, 0, 0.7)',
-  })
-
-  try {
-    const result = await getSpectrumData(fileId)
-    const spectrumData = result.spectrum || []
-    
-    // 更新 store
-    spectrumStore.setRawData(spectrumData)
-    
-    // 更新图表
-    updateChart(spectrumData)
-    
-    // 清空峰位数据
-    peakData.value = []
-    peakLabels.value = []
-  } catch (error: any) {
-    ElMessage.error(`加载光谱数据失败：${error.message || '未知错误'}`)
-  } finally {
-    loading.close()
-  }
-}
-
-/**
- * 开始寻峰分析
- */
-const startPeakAnalysis = async () => {
-  const fileId = spectrumStore.currentFileId
-  if (!fileId) {
-    ElMessage.warning('请先选择一个文件')
-    return
-  }
-
-  const loading = ElLoading.service({
-    lock: true,
-    text: '正在分析峰位...',
-    background: 'rgba(0, 0, 0, 0.7)',
-  })
-
-  try {
-    // 获取选中的元素范围
-    const selectedElements = elements.value.filter(e => e.selected)
-    
-    const result = await analyzePeaks(fileId, {
-      element_range: [0, selectedElements.length - 1],
-      sensitivity: 0.5,
-      min_peak_width: 3,
-    })
-    
-    // 更新 store
-    spectrumStore.setPeakResults(result.peaks || [])
-    
-    // 更新峰位表格
-    updatePeakTable(result.peaks || [])
-    
-    // 更新图表标注
-    updatePeakLabels(result.peaks || [])
-    
-    ElMessage.success(`找到 ${result.peaks?.length || 0} 个峰位`)
-  } catch (error: any) {
-    ElMessage.error(`寻峰分析失败：${error.message || '未知错误'}`)
-  } finally {
-    loading.close()
-  }
-}
-
-/**
- * 更新峰位表格数据
- */
-const updatePeakTable = (peaks: any[]) => {
-  peakData.value = peaks.map((peak, index) => ({
-    index: index + 1,
-    peak: peak.position.toFixed(2),
-    vibrations: peak.assignment 
-      ? [{ type: peak.assignment, checked: true }]
-      : [{ type: '待分析', checked: false }],
-  }))
-}
-
-/**
- * 更新图表峰位标注
- */
-const updatePeakLabels = (peaks: any[]) => {
-  peakLabels.value = peaks.map(peak => ({
-    x: peak.position,
-    label: peak.position.toFixed(2),
-  }))
-  
-  // 重新渲染图表
-  if (ramanChart && spectrumStore.rawSpectrumData.length > 0) {
-    updateChart(spectrumStore.rawSpectrumData)
-  }
-}
-
-/**
- * 导出数据
- */
-const exportData = () => {
-  if (peakData.value.length === 0) {
-    ElMessage.warning('暂无数据可导出')
-    return
-  }
-  ElMessage.info('导出功能开发中...')
-}
-
-/**
- * 全选元素
- */
-const selectAllElements = () => {
-  elements.value.forEach(e => e.selected = true)
-}
-
-/**
- * 清空元素
- */
-const clearAllElements = () => {
-  elements.value.forEach(e => e.selected = false)
-}
-
-// ─────────────────────── 图表 ───────────────────────
-
-/**
- * 更新图表数据
- */
-const updateChart = (data: Array<[number, number]>) => {
-  if (!ramanChart) return
-  
-  const markLines = peakLabels.value.map(p => ({
-    xAxis: p.x,
-    label: {
-      formatter: p.label,
-      rotate: 90,
-      color: '#00e5ff',
-      fontSize: 10,
-      fontWeight: 'bold',
-      position: 'insideEndTop' as const,
-      distance: 8,
-      backgroundColor: 'rgba(0,12,35,0.7)',
-      padding: [2, 4],
-      borderRadius: 2,
-    },
-    lineStyle: { color: 'rgba(0,200,255,0.28)', type: 'dashed' as const, width: 1 }
-  }))
-
-  ramanChart.setOption({
-    series: [{
-      data: data,
-      markLine: {
-        silent: true,
-        animation: false,
-        symbol: ['none', 'none'],
-        data: markLines,
-      }
-    }]
-  })
-}
-
-/**
- * 生成默认拉曼光谱数据（用于演示）
- */
+/** 生成拉曼光谱数据（聚苯乙烯，吸收峰向下） */
 const generateRamanData = (): [number, number][] => {
   const peaks = [
     { pos: 3059, h: 65, w: 25 }, { pos: 3028, h: 55, w: 20 },
@@ -902,14 +326,21 @@ const generateRamanData = (): [number, number][] => {
   return data
 }
 
-/**
- * 初始化图表
- */
+/** 峰位标注列表 */
+const peakLabels = [
+  { x: 3059, label: '3059.10' }, { x: 2910, label: '2910.58' },
+  { x: 2848, label: '2848.86' }, { x: 2630, label: '2630.91' },
+  { x: 2075, label: '2075.41' }, { x: 1600, label: '1600.47' },
+  { x: 1450, label: '1450.47' }, { x: 1244, label: '1244.09' },
+  { x: 1028, label: '1028.05' }, { x: 840,  label: '840.56'  },
+  { x: 748,  label: '748.38'  }, { x: 468,  label: '468.77'  },
+]
+
 const initRamanChart = () => {
   if (!ramanChartRef.value) return
   ramanChart = echarts.init(ramanChartRef.value)
 
-  const initialMarkLines = peakLabels.value.map(p => ({
+  const markLines = peakLabels.map(p => ({
     xAxis: p.x,
     label: {
       formatter: p.label,
@@ -917,7 +348,7 @@ const initRamanChart = () => {
       color: '#00e5ff',
       fontSize: 10,
       fontWeight: 'bold',
-      position: 'insideEndTop' as const,
+      position: 'insideEndTop',
       distance: 8,
       backgroundColor: 'rgba(0,12,35,0.7)',
       padding: [2, 4],
@@ -929,10 +360,17 @@ const initRamanChart = () => {
   ramanChart.setOption({
     backgroundColor: 'transparent',
     animation: false,
+    /**
+     * grid 使用固定像素值，精确控制各区域空间：
+     *   left  72px  → Y轴标题"强度(a.u.)"(旋转90°约需50px) + 刻度数字 + 间距
+     *   right 20px  → 右侧留白
+     *   top   40px  → 峰位标注文字上方留白（标注 rotate:90 后向上延伸）
+     *   bottom 90px → X轴刻度(~20px) + X轴标题(~20px) + dataZoom(40px) + 间距
+     */
     grid: {
-      left: 72,
-      right: 20,
-      top: 40,
+      left:   72,
+      right:  20,
+      top:    40,
       bottom: 90,
     },
     tooltip: {
@@ -943,7 +381,7 @@ const initRamanChart = () => {
       textStyle: { color: '#00f6ff', fontSize: 12 },
       formatter: (params: any) => {
         const p = params[0]
-        return `<b style="color:#00ff88">波数：${p.data[0]} cm⁻¹</b><br/>强度：${(p.data[1] as number).toFixed(2)}`
+        return `<b style="color:#00ff88">波数: ${p.data[0]} cm⁻¹</b><br/>强度: ${(p.data[1] as number).toFixed(2)}`
       }
     },
     xAxis: {
@@ -953,10 +391,12 @@ const initRamanChart = () => {
       max: 4000,
       inverse: true,
       nameLocation: 'middle',
+      // nameGap = X轴刻度标签到标题的间距
+      // 刻度标签高约 18px，dataZoom 高 40px，底部 bottom=4px → gap ≈ 18 + 8 = 26 … 实测用 48
       nameGap: 48,
       nameTextStyle: { color: '#00c8ff', fontSize: 13, fontWeight: 'bold' },
-      axisLine: { lineStyle: { color: '#00f6ff', width: 1.5 } },
-      axisTick: { lineStyle: { color: '#00f6ff' } },
+      axisLine:  { lineStyle: { color: '#00f6ff', width: 1.5 } },
+      axisTick:  { lineStyle: { color: '#00f6ff' } },
       axisLabel: { color: '#b0e8ff', fontSize: 11, margin: 8 },
       splitLine: { lineStyle: { color: 'rgba(0,246,255,0.07)', width: 1 } },
     },
@@ -966,10 +406,11 @@ const initRamanChart = () => {
       min: -30,
       max: 120,
       nameLocation: 'middle',
+      // nameGap = 刻度数字宽度(约28px) + axisLabel.margin(6) + 额外间距
       nameGap: 52,
       nameTextStyle: { color: '#00c8ff', fontSize: 13, fontWeight: 'bold' },
-      axisLine: { lineStyle: { color: '#00f6ff', width: 1.5 } },
-      axisTick: { lineStyle: { color: '#00f6ff' } },
+      axisLine:  { lineStyle: { color: '#00f6ff', width: 1.5 } },
+      axisTick:  { lineStyle: { color: '#00f6ff' } },
       axisLabel: { color: '#b0e8ff', fontSize: 11, margin: 6 },
       splitLine: { lineStyle: { color: 'rgba(0,246,255,0.07)', width: 1 } },
     },
@@ -977,6 +418,7 @@ const initRamanChart = () => {
       {
         type: 'slider',
         xAxisIndex: 0,
+        // bottom:4 → 距容器底边 4px，高度 40px，不与 X轴标题重叠（X轴标题在 grid 内部）
         bottom: 4,
         height: 40,
         borderColor: 'rgba(0,246,255,0.32)',
@@ -990,7 +432,7 @@ const initRamanChart = () => {
           areaStyle: { color: 'rgba(0,100,200,0.58)' }
         },
         fillerColor: 'rgba(0,100,200,0.18)',
-        handleStyle: { color: '#00f6ff', borderColor: '#00f6ff', borderWidth: 2 },
+        handleStyle:     { color: '#00f6ff', borderColor: '#00f6ff', borderWidth: 2 },
         moveHandleStyle: { color: '#00f6ff' },
         emphasis: { handleStyle: { color: '#00ff88', borderColor: '#00ff88' } },
         textStyle: { color: '#00c8ff', fontSize: 11 },
@@ -1008,7 +450,7 @@ const initRamanChart = () => {
         silent: true,
         animation: false,
         symbol: ['none', 'none'],
-        data: initialMarkLines,
+        data: markLines,
       }
     }]
   })
@@ -1016,20 +458,15 @@ const initRamanChart = () => {
 
 const handleResize = () => ramanChart?.resize()
 
-// ─────────────────────── 生命周期 ───────────────────────
 onMounted(() => {
   nextTick(() => {
     initRamanChart()
     window.addEventListener('resize', handleResize)
-    // 点击页面其他地方关闭右键菜单
-    document.addEventListener('click', closeContextMenu)
-    loadFileList()
   })
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
-  document.removeEventListener('click', closeContextMenu)
   ramanChart?.dispose()
 })
 </script>
@@ -1182,48 +619,6 @@ onUnmounted(() => {
       }
     }
   }
-  
-  /* 右键菜单样式 */
-  .context-menu {
-    position: fixed;
-    z-index: 9999;
-    min-width: 150px;
-    background: rgba(0, 21, 41, 0.95);
-    border: 1px solid rgba(0, 246, 255, 0.38);
-    border-radius: 6px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 246, 255, 0.15);
-    padding: 6px 0;
-    backdrop-filter: blur(10px);
-    
-    .context-menu-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 16px;
-      font-size: 13px;
-      color: rgba(0, 200, 255, 0.85);
-      cursor: pointer;
-      transition: all 0.2s ease;
-      
-      &:hover {
-        background: rgba(0, 246, 255, 0.12);
-        color: #00ff88;
-        
-        .el-icon {
-          color: #00ff88;
-        }
-      }
-      
-      .el-icon {
-        font-size: 16px;
-        color: rgba(0, 200, 255, 0.65);
-      }
-    }
-    
-    .context-menu-item + .context-menu-item {
-      border-top: 1px solid rgba(0, 246, 255, 0.08);
-    }
-  }
 }
 
 /* ══════════════════════════════════════════
@@ -1248,7 +643,7 @@ onUnmounted(() => {
 /*
   光谱卡片 flex:55 ≈ 55% 高度
   匹配卡片 flex:45 ≈ 45% 高度
-  两者通过 flex 比例自适应父容器，避免小屏溢出
+  两者通过 flex 比例自适应父容器，不写死 px，避免小屏溢出
 */
 .spectrum-card {
   flex: 55;
@@ -1279,18 +674,7 @@ onUnmounted(() => {
 }
 
 /* 通用标题行 */
-.card-header {
-  margin-bottom: 8px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.card-actions {
-  display: flex;
-  gap: 8px;
-}
+.card-header { margin-bottom: 8px; flex-shrink: 0; }
 
 .card-title {
   display: flex;
@@ -1301,67 +685,6 @@ onUnmounted(() => {
   color: #00c8ff;
   text-shadow: 0 0 10px rgba(0, 200, 255, 0.42);
   .title-icon { font-size: 17px; }
-}
-
-/* 多光谱对比列表 */
-.comparison-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 8px 0;
-  margin-bottom: 8px;
-  border-bottom: 1px solid rgba(0, 246, 255, 0.15);
-  
-  .comparison-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 6px 12px;
-    background: rgba(0, 21, 41, 0.8);
-    border: 1px solid;
-    border-radius: 4px;
-    font-size: 12px;
-    color: rgba(0, 200, 255, 0.85);
-    
-    .item-name {
-      max-width: 150px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    
-    .item-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      
-      .visibility-toggle {
-        cursor: pointer;
-        font-size: 14px;
-        transition: all 0.2s;
-        &:hover { opacity: 0.7; }
-      }
-      
-      .remove-btn {
-        font-size: 14px;
-        color: rgba(255, 80, 80, 0.6);
-        cursor: pointer;
-        &:hover { color: rgba(255, 80, 80, 0.9); }
-      }
-    }
-  }
-  
-  .comparison-add-hint {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    color: rgba(0, 200, 255, 0.5);
-    padding: 8px 12px;
-    background: rgba(0, 246, 255, 0.05);
-    border-radius: 4px;
-  }
 }
 
 /* ECharts 容器 */

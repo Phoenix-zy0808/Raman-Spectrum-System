@@ -1,0 +1,440 @@
+/**
+ * SCSS Mixins - 通用样式混合器
+ */
+
+@use 'sass:map';
+@import './variables.scss';
+
+// ========== 布局 Mixins ==========
+
+/**
+ * Flex 布局
+ */
+@mixin flex($direction: row, $justify: flex-start, $align: stretch, $wrap: nowrap) {
+  display: flex;
+  flex-direction: $direction;
+  justify-content: $justify;
+  align-items: $align;
+  flex-wrap: $wrap;
+}
+
+/**
+ * 居中布局
+ */
+@mixin center($type: flex) {
+  @if $type == flex {
+    @include flex(column, center, center);
+  } @else if $type == absolute {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  } @else if $type == grid {
+    display: grid;
+    place-items: center;
+  }
+}
+
+/**
+ * 网格布局
+ */
+@mixin grid($columns: 1, $gap: 16px, $rows: auto) {
+  display: grid;
+  grid-template-columns: repeat($columns, 1fr);
+  grid-template-rows: $rows;
+  gap: $gap;
+}
+
+// ========== 尺寸 Mixins ==========
+
+/**
+ * 固定尺寸
+ */
+@mixin size($width, $height: $width) {
+  width: $width;
+  height: $height;
+}
+
+/**
+ * 100% 尺寸
+ */
+@mixin full-size {
+  width: 100%;
+  height: 100%;
+}
+
+/**
+ * 填充容器
+ */
+@mixin fill-container {
+  width: 100vw;
+  height: 100vh;
+}
+
+// ========== 定位 Mixins ==========
+
+/**
+ * 绝对定位填充
+ */
+@mixin absolute-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/**
+ * 固定在某个位置
+ */
+@mixin fixed-position($top: 0, $left: auto, $right: auto, $bottom: auto) {
+  position: fixed;
+  top: $top;
+  left: $left;
+  right: $right;
+  bottom: $bottom;
+  z-index: 1000;
+}
+
+// ========== 文本 Mixins ==========
+
+/**
+ * 文本截断（单行）
+ */
+@mixin text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/**
+ * 文本截断（多行）
+ */
+@mixin text-clamp($lines: 2) {
+  display: -webkit-box;
+  -webkit-line-clamp: $lines;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/**
+ * 文本渐变
+ */
+@mixin text-gradient($from: $primary-color, $to: $secondary-color) {
+  background: linear-gradient(90deg, $from, $to);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+// ========== 背景 Mixins ==========
+
+/**
+ * 毛玻璃效果
+ */
+@mixin backdrop-blur($blur: 10px, $bg: rgba(255, 255, 255, 0.1)) {
+  background: $bg;
+  backdrop-filter: blur($blur);
+  -webkit-backdrop-filter: blur($blur);
+}
+
+/**
+ * 渐变背景
+ */
+@mixin gradient-bg($from: $primary-color, $to: $secondary-color, $direction: 135deg) {
+  background: linear-gradient($direction, $from, $to);
+  background-size: 200% 200%;
+}
+
+// ========== 边框 Mixins ==========
+
+/**
+ * 发光边框
+ */
+@mixin glow-border($color: $primary-color, $width: 1px, $blur: 10px) {
+  border: $width solid $color;
+  box-shadow: 0 0 $blur $color, inset 0 0 $blur rgba($color, 0.1);
+}
+
+/**
+ * 渐变边框
+ */
+@mixin gradient-border($colors: ($primary-color, $secondary-color), $width: 1px) {
+  position: relative;
+  background: $bg-card;
+  background-clip: padding-box;
+  border: $width solid transparent;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: -1;
+    margin: -$width;
+    border-radius: inherit;
+    background: linear-gradient(90deg, $colors...);
+  }
+}
+
+// ========== 动画 Mixins ==========
+
+/**
+ * 过渡效果
+ */
+@mixin transition($properties: all, $duration: 0.3s, $timing: ease) {
+  transition: $properties $duration $timing;
+}
+
+/**
+ * 脉冲动画
+ */
+@mixin pulse($duration: 2s, $from: 1, $to: 0.5) {
+  animation: pulse $duration ease-in-out infinite;
+
+  @keyframes pulse {
+    0%, 100% {
+      opacity: $from;
+    }
+    50% {
+      opacity: $to;
+    }
+  }
+}
+
+/**
+ * 渐变流动动画
+ */
+@mixin gradient-flow($duration: 8s) {
+  background-size: 200% 200%;
+  animation: gradientFlow $duration ease infinite;
+
+  @keyframes gradientFlow {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+}
+
+/**
+ * 闪烁动画
+ */
+@mixin shimmer($duration: 2s) {
+  animation: shimmer $duration ease-in-out infinite;
+
+  @keyframes shimmer {
+    0%, 100% {
+      opacity: 0.5;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+}
+
+// ========== 滚动条 Mixins ==========
+
+/**
+ * 自定义滚动条
+ */
+@mixin custom-scrollbar(
+  $width: 8px,
+  $track-bg: $transparent-secondary,
+  $thumb-bg: $transparent-hover,
+  $thumb-hover: $primary-light,
+  $radius: 4px
+) {
+  ::-webkit-scrollbar {
+    width: $width;
+    height: $width;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: $track-bg;
+    border-radius: $radius;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: $thumb-bg;
+    border-radius: $radius;
+    @include transition(background, 0.3s, ease);
+
+    &:hover {
+      background: $thumb-hover;
+    }
+
+    &:active {
+      background: $primary-color;
+    }
+  }
+}
+
+// ========== 响应式 Mixins ==========
+
+/**
+ * 响应式断点
+ */
+$breakpoints: (
+  'xs': 0,
+  'sm': 576px,
+  'md': 768px,
+  'lg': 992px,
+  'xl': 1200px,
+  'xxl': 1400px,
+) !default;
+
+/**
+ * 媒体查询
+ */
+@mixin respond-to($breakpoint) {
+  @if map.has-key($breakpoints, $breakpoint) {
+    @media (min-width: map.get($breakpoints, $breakpoint)) {
+      @content;
+    }
+  } @else {
+    @warn "未知的断点：#{$breakpoint}";
+  }
+}
+
+/**
+ * 移动端
+ */
+@mixin mobile {
+  @media (max-width: map.get($breakpoints, 'md') - 1) {
+    @content;
+  }
+}
+
+/**
+ * 平板端
+ */
+@mixin tablet {
+  @media (min-width: map.get($breakpoints, 'md')) and (max-width: map.get($breakpoints, 'lg') - 1) {
+    @content;
+  }
+}
+
+/**
+ * 桌面端
+ */
+@mixin desktop {
+  @media (min-width: map.get($breakpoints, 'lg')) {
+    @content;
+  }
+}
+
+// ========== 卡片 Mixins ==========
+
+/**
+ * 科技风格卡片
+ */
+@mixin tech-card {
+  position: relative;
+  padding: 20px;
+  background: $bg-card;
+  border: 1px solid $border-color;
+  box-shadow: $shadow-glow;
+  @include custom-scrollbar;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: $gradient-primary;
+  }
+}
+
+/**
+ * 发光卡片
+ */
+@mixin glow-card($glow-color: $secondary-color) {
+  @include tech-card;
+  box-shadow: 0 0 20px rgba($glow-color, 0.3), inset 0 0 20px rgba($glow-color, 0.05);
+
+  &:hover {
+    box-shadow: 0 0 30px rgba($glow-color, 0.5), inset 0 0 30px rgba($glow-color, 0.1);
+  }
+}
+
+// ========== 按钮 Mixins ==========
+
+/**
+ * 科技风格按钮
+ */
+@mixin tech-button {
+  position: relative;
+  padding: 12px 24px;
+  background: $gradient-primary;
+  border: 2px solid $secondary-color;
+  color: $bg-darker;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  overflow: hidden;
+  @include transition(all, 0.3s, ease);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.2);
+    @include transition(left, 0.5s, ease);
+  }
+
+  &:hover:not(:disabled) {
+    box-shadow: $shadow-glow-strong;
+    transform: translateY(-2px);
+
+    &::before {
+      left: 100%;
+    }
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// ========== 输入框 Mixins ==========
+
+/**
+ * 科技风格输入框
+ */
+@mixin tech-input {
+  padding: 12px 16px;
+  background: $transparent-primary;
+  border: 1px solid $border-color;
+  color: $text-primary;
+  font-family: 'Courier New', monospace;
+  outline: none;
+  @include transition(all, 0.3s, ease);
+
+  &::placeholder {
+    color: $text-placeholder;
+  }
+
+  &:focus {
+    background: $transparent-hover;
+    border-color: $secondary-color;
+    box-shadow: $shadow-glow;
+  }
+}
